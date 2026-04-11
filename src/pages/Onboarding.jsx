@@ -2,167 +2,363 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Onboarding.css'
 
+const RESPONSE_LABELS = ['Never', 'Rarely', 'Sometimes', 'Often', 'Always']
+
+const QUESTIONNAIRE_STEPS = [
+  {
+    key: 'sleep_rhythm',
+    eyebrow: 'Domain 1',
+    title: 'Sleep Rhythm',
+    description: 'These questions look at how consistent and refreshing your sleep has been lately.',
+    questions: [
+      {
+        id: 'Q1',
+        text: 'On most nights, how many hours of sleep do you usually get?',
+        options: [
+          'Less than 6 hours',
+          '6 to less than 7 hours',
+          '7 to less than 8 hours',
+          '8 to less than 9 hours',
+          '9 hours or more',
+        ],
+      },
+      {
+        id: 'Q2',
+        text: 'Over the past 2 weeks, how often did you feel your sleep was not refreshing?',
+        options: RESPONSE_LABELS,
+      },
+      {
+        id: 'Q3',
+        text: 'Over the past 2 weeks, how often did you have trouble falling asleep or staying asleep?',
+        options: RESPONSE_LABELS,
+      },
+    ],
+  },
+  {
+    key: 'move_mode',
+    eyebrow: 'Domain 2',
+    title: 'Move Mode',
+    description: 'Your movement habits help us estimate how much physical activity is supporting your brain health.',
+    questions: [
+      {
+        id: 'Q4',
+        text: 'On a usual day, how much moderate or vigorous physical activity do you get?',
+        options: [
+          'Less than 30 minutes',
+          '30 minutes to less than 1 hour',
+          '1 to less than 1.5 hours',
+          '1.5 to less than 2 hours',
+          '2 to less than 2.5 hours',
+        ],
+      },
+      {
+        id: 'Q5',
+        text: 'How would you describe your usual daily movement?',
+        options: [
+          'Mostly sitting',
+          'A little light movement',
+          'Some walking or activity',
+          'Active most of the day',
+          'Very active most days',
+        ],
+      },
+      {
+        id: 'Q6',
+        text: 'In a usual week, how often do you do exercise that makes you breathe harder, such as brisk walking, gym, sport, or cycling?',
+        options: ['Never', '1 day', '2 days', '3-4 days', '5 or more days'],
+      },
+    ],
+  },
+  {
+    key: 'cognitive_strain',
+    eyebrow: 'Domain 3',
+    title: 'Cognitive Strain',
+    description: 'This section focuses on overload, mental fatigue, and day-to-day pressure.',
+    questions: [
+      {
+        id: 'Q7',
+        text: 'Over the past 2 weeks, how often have you felt mentally overloaded by study, work, or daily responsibilities?',
+        options: RESPONSE_LABELS,
+      },
+      {
+        id: 'Q8',
+        text: 'Over the past 2 weeks, how often did you find it hard to focus because your mind felt tired or cluttered?',
+        options: RESPONSE_LABELS,
+      },
+      {
+        id: 'Q9',
+        text: 'Over the past 2 weeks, how often did everyday demands feel like they were piling up faster than you could manage them?',
+        options: RESPONSE_LABELS,
+      },
+    ],
+  },
+  {
+    key: 'social_energy',
+    eyebrow: 'Domain 4',
+    title: 'Social Energy',
+    description: 'Social connection can protect energy, resilience, and overall wellbeing.',
+    questions: [
+      {
+        id: 'Q10',
+        text: 'Over the past 2 weeks, how often did you feel meaningfully connected to other people?',
+        options: RESPONSE_LABELS,
+      },
+      {
+        id: 'Q11',
+        text: 'When you feel stressed or drained, how often do you have someone you can talk to?',
+        options: RESPONSE_LABELS,
+      },
+      {
+        id: 'Q12',
+        text: 'Over the past 2 weeks, how often did you feel socially drained or disconnected, even when around other people?',
+        options: RESPONSE_LABELS,
+      },
+    ],
+  },
+]
+
+const DOMAIN_CONFIG = {
+  sleep_rhythm: { label: 'Sleep Rhythm', questions: ['Q1', 'Q2', 'Q3'], reverseScored: ['Q2', 'Q3'] },
+  move_mode: { label: 'Move Mode', questions: ['Q4', 'Q5', 'Q6'], reverseScored: [] },
+  cognitive_strain: { label: 'Cognitive Strain', questions: ['Q7', 'Q8', 'Q9'], reverseScored: ['Q7', 'Q8', 'Q9'] },
+  social_energy: { label: 'Social Energy', questions: ['Q10', 'Q11', 'Q12'], reverseScored: ['Q12'] },
+}
+
+function reverseScore(value) {
+  return 6 - value
+}
+
+function calculateDomainScore(responses, { questions, reverseScored }) {
+  const raw = questions.reduce((sum, questionId) => {
+    const value = responses[questionId]
+    const adjustedValue = reverseScored.includes(questionId) ? reverseScore(value) : value
+    return sum + adjustedValue
+  }, 0)
+
+  return Math.round(((raw - 3) / 12) * 100)
+}
+
+function interpretScore(score) {
+  if (score >= 75) return 'strong current habits'
+  if (score >= 50) return 'moderate, room to improve'
+  if (score >= 25) return 'noticeable strain or weaker habits'
+  return 'priority area for support'
+}
+
+function buildInsights(domainEntries) {
+  const sorted = [...domainEntries].sort((a, b) => b.score - a.score)
+  return {
+    strengths: sorted.slice(0, 2),
+    priorities: sorted.slice(-2).reverse(),
+  }
+}
+
 function Onboarding() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(1)
-  const totalSteps = 4
+  const [step, setStep] = useState(0)
+  const [responses, setResponses] = useState({})
+  const [showValidation, setShowValidation] = useState(false)
+  const totalSteps = QUESTIONNAIRE_STEPS.length + 1
+
+  const currentStep = QUESTIONNAIRE_STEPS[step]
+  const isResultStep = step === QUESTIONNAIRE_STEPS.length
+
+  const setAnswer = (questionId, value) => {
+    setResponses((current) => ({
+      ...current,
+      [questionId]: value,
+    }))
+    setShowValidation(false)
+  }
+
+  const stepComplete = currentStep
+    ? currentStep.questions.every((question) => responses[question.id])
+    : true
 
   const nextStep = () => {
-    if (step < totalSteps) setStep(step + 1)
+    if (!stepComplete) {
+      setShowValidation(true)
+      return
+    }
+
+    if (step < QUESTIONNAIRE_STEPS.length) {
+      setStep(step + 1)
+      setShowValidation(false)
+    }
   }
+
   const prevStep = () => {
-    if (step > 1) setStep(step - 1)
+    if (step > 0) {
+      setStep(step - 1)
+      setShowValidation(false)
+    }
+  }
+
+  const domainScores = Object.entries(DOMAIN_CONFIG).map(([key, config]) => ({
+    key,
+    label: config.label,
+    score: calculateDomainScore(responses, config),
+  }))
+
+  const overallScore = Math.round(
+    domainScores.reduce((sum, domain) => sum + domain.score, 0) / domainScores.length,
+  )
+  const interpretation = interpretScore(overallScore)
+  const insights = buildInsights(domainScores)
+
+  const finishOnboarding = () => {
+    const payload = {
+      completedAt: new Date().toISOString(),
+      responses,
+      overallScore,
+      overallInterpretation: interpretation,
+      domainScores,
+    }
+
+    localStorage.setItem('brainboostSnapshot', JSON.stringify(payload))
+    navigate('/dashboard', { state: payload })
   }
 
   return (
     <div className="ob-wrap">
       <div className="ob-progress-row">
         <div className="ob-progress-track">
-          <div className="ob-progress-fill" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
+          <div className="ob-progress-fill" style={{ width: `${((step + 1) / totalSteps) * 100}%` }}></div>
         </div>
-        <div className="ob-step-label">Step {step} of {totalSteps}</div>
+        <div className="ob-step-label">Step {step + 1} of {totalSteps}</div>
       </div>
 
       <div className="ob-card">
-
-        {step === 1 && (
+        {!isResultStep && (
           <div>
-            <div className="ob-eyebrow">Sleep Schedule</div>
-            <div className="ob-title">Tell us about your sleep</div>
-            <div className="ob-desc">Sleep consistency matters more than duration. Help us understand your typical routine.</div>
+            <div className="ob-eyebrow">{currentStep.eyebrow}</div>
+            <div className="ob-title">{currentStep.title}</div>
+            <div className="ob-desc">{currentStep.description}</div>
 
-            <label className="field-label">Usual bedtime</label>
-            <select className="time-input">
-              <option>9 PM</option>
-              <option>10 PM</option>
-              <option>11 PM</option>
-              <option>12 AM</option>
-              <option>1 AM</option>
-              <option>2 AM</option>
-            </select>
+            <div className="question-list">
+              {currentStep.questions.map((question) => (
+                <div key={question.id} className="question-card">
+                  <label className="field-label">{question.text}</label>
+                  <div className="option-grid cols-1">
+                    {question.options.map((option, index) => {
+                      const value = index + 1
+                      const selected = responses[question.id] === value
 
-            <label className="field-label">Usual wake-up time</label>
-            <select className="time-input">
-              <option>5 AM</option>
-              <option>6 AM</option>
-              <option>7 AM</option>
-              <option>8 AM</option>
-              <option>9 AM</option>
-            </select>
-
-            <label className="field-label">How consistent is your schedule?</label>
-            <div className="option-grid cols-3">
-              <button className="opt-btn">Very consistent</button>
-              <button className="opt-btn">Somewhat irregular</button>
-              <button className="opt-btn">Very irregular</button>
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          className={`opt-btn answer-option ${selected ? 'selected' : ''}`}
+                          onClick={() => setAnswer(question.id, value)}
+                        >
+                          <span className="answer-scale">{value}</span>
+                          <span className="answer-label">{option}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
+            {showValidation && (
+              <div className="validation-text">Please answer all questions before continuing.</div>
+            )}
+
             <div className="ob-footer">
-              <button className="btn-next full" onClick={nextStep}>Continue →</button>
+              {step > 0 ? (
+                <button type="button" className="btn-back" onClick={prevStep}>
+                  Back
+                </button>
+              ) : (
+                <div className="btn-spacer"></div>
+              )}
+              <button type="button" className="btn-next" onClick={nextStep}>
+                Continue
+              </button>
             </div>
           </div>
         )}
 
-        {step === 2 && (
-          <div>
-            <div className="ob-eyebrow">Pre-sleep Habits</div>
-            <div className="ob-title">How do you wind down before bed?</div>
-            <div className="ob-desc">Screen use within an hour of sleeping can disrupt memory consolidation.</div>
-
-            <label className="field-label">How often do you use screens within 1 hour of bedtime?</label>
-            <div className="option-grid cols-1">
-              <button className="opt-btn">Almost every night</button>
-              <button className="opt-btn">A few times a week</button>
-              <button className="opt-btn">Rarely or never</button>
-            </div>
-
-            <div className="ob-footer">
-              <button className="btn-back" onClick={prevStep}>← Back</button>
-              <button className="btn-next" onClick={nextStep}>Continue →</button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div>
-            <div className="ob-eyebrow">Study Routine</div>
-            <div className="ob-title">What does your daily study look like?</div>
-            <div className="ob-desc">Understanding your study load helps us identify whether your workload is contributing to fatigue.</div>
-
-            <label className="field-label">Average daily study hours</label>
-            <input type="range" min="0" max="12" defaultValue="4" className="slider" />
-
-            <label className="field-label">Study style</label>
-            <div className="option-grid cols-2">
-              <button className="opt-btn">Long deep sessions</button>
-              <button className="opt-btn">Short sprints</button>
-              <button className="opt-btn">Mixed approach</button>
-              <button className="opt-btn">Cramming before exams</button>
-            </div>
-
-            <div className="ob-footer">
-              <button className="btn-back" onClick={prevStep}>← Back</button>
-              <button className="btn-next" onClick={nextStep}>Continue →</button>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
+        {isResultStep && (
           <div>
             <div className="ob-eyebrow">Your Result</div>
-            <div className="ob-title">Your brain health profile is ready</div>
-            <div className="ob-desc">Based on your sleep, screen habits, and study routine — here's what we found.</div>
+            <div className="ob-title">Your brain health snapshot is ready</div>
+            <div className="ob-desc">
+              This is a non-clinical lifestyle snapshot based on your answers across sleep, movement,
+              cognitive strain, and social energy.
+            </div>
 
             <div className="score-ring">
               <svg width="120" height="120" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#EBF5FF" strokeWidth="10"/>
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#4A9EDB" strokeWidth="10"
-                  strokeDasharray="314" strokeDashoffset="94" strokeLinecap="round"
-                  transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#EBF5FF" strokeWidth="10" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="50"
+                  fill="none"
+                  stroke="#4A9EDB"
+                  strokeWidth="10"
+                  strokeDasharray="314"
+                  strokeDashoffset={314 - (314 * overallScore) / 100}
+                  strokeLinecap="round"
+                  transform="rotate(-90 60 60)"
+                />
               </svg>
               <div className="score-number">
-                <div className="score-num">70</div>
+                <div className="score-num">{overallScore}</div>
                 <div className="score-sub">/ 100</div>
               </div>
             </div>
 
-            <div className="result-title">Building Good Habits</div>
-            <div className="result-tagline">A few targeted changes to your sleep routine could noticeably improve your daily focus.</div>
+            <div className="result-title">{interpretation}</div>
+            <div className="result-tagline">
+              Your score is the average of four domain scores: Sleep Rhythm, Move Mode, Cognitive
+              Strain, and Social Energy.
+            </div>
 
             <div className="result-grid">
-              <div className="result-item strength">
-                <div className="result-item-label">Strength</div>
-                <div className="result-item-text">Consistent study duration</div>
-              </div>
-              <div className="result-item strength">
-                <div className="result-item-label">Strength</div>
-                <div className="result-item-text">Sleep duration within 7–9h range</div>
-              </div>
-              <div className="result-item risk">
-                <div className="result-item-label">Risk area</div>
-                <div className="result-item-text">Late-night screen use disrupting memory</div>
-              </div>
-              <div className="result-item risk">
-                <div className="result-item-label">Risk area</div>
-                <div className="result-item-text">Irregular sleep schedule reducing attention</div>
-              </div>
+              {insights.strengths.map((domain) => (
+                <div key={`strength-${domain.key}`} className="result-item strength">
+                  <div className="result-item-label">Stronger area</div>
+                  <div className="result-item-text">
+                    {domain.label}: {domain.score}/100
+                  </div>
+                </div>
+              ))}
+              {insights.priorities.map((domain) => (
+                <div key={`priority-${domain.key}`} className="result-item risk">
+                  <div className="result-item-label">Priority area</div>
+                  <div className="result-item-text">
+                    {domain.label}: {domain.score}/100
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="tip-box">
-              <div className="tip-label">Today's tip</div>
-              <div className="tip-text">Try putting your phone face-down 30 minutes before bed tonight.</div>
+              <div className="tip-label">How scoring works</div>
+              <div className="tip-text">
+                Some questions are reverse-scored so that a higher final score always reflects
+                stronger current habits and lower day-to-day strain.
+              </div>
             </div>
 
             <div className="disclaimer">
-              BrainBoost provides lifestyle awareness, not clinical or medical advice.
+              BrainBoost provides lifestyle awareness only. It is not a medical, psychological, or
+              diagnostic assessment.
             </div>
 
-            <button className="btn-next full" onClick={() => navigate('/dashboard')}>
-              Go to my dashboard →
-            </button>
+            <div className="ob-footer">
+              <button type="button" className="btn-back" onClick={prevStep}>
+                Back
+              </button>
+              <button type="button" className="btn-next" onClick={finishOnboarding}>
+                Go to my dashboard
+              </button>
+            </div>
           </div>
         )}
-
       </div>
     </div>
   )

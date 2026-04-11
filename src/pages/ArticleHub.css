@@ -1,5 +1,5 @@
 .hub-wrap {
-    max-width: 780px;
+    max-width: 880px;
     margin: 0 auto;
     padding: 80px 1.25rem 4rem;
   }
@@ -20,6 +20,63 @@
     color: #5A7A70;
     line-height: 1.6;
   }
+
+  .recommendation-panel {
+    background: linear-gradient(135deg, #F8FCFF, #EEF7FF);
+    border: 1px solid rgba(74, 158, 219, 0.18);
+    border-radius: 20px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .recommendation-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #4A9EDB;
+    margin-bottom: 8px;
+  }
+
+  .recommendation-copy {
+    font-size: 14px;
+    color: #37544A;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .recommended-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .recommended-pill {
+    border: 0.5px solid rgba(29, 158, 117, 0.18);
+    border-radius: 14px;
+    background: white;
+    color: #1A2E28;
+    padding: 0.9rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .recommended-pill:hover {
+    border-color: #4A9EDB;
+    transform: translateY(-1px);
+  }
+
+  .recommended-topic {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    border-radius: 999px;
+    padding: 5px 8px;
+    flex-shrink: 0;
+  }
   
   .filter-row {
     display: flex;
@@ -39,13 +96,6 @@
     background: white;
     color: #5A7A70;
   }
-
-  .filter-btn:first-child {
-    padding: 7px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border: 1.5px solid rgba(29, 158, 117, 0.4);
-  }
   
   .filter-btn:hover {
     border-color: #4A9EDB;
@@ -60,7 +110,7 @@
   
   .articles-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
   
@@ -72,6 +122,9 @@
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 1px 4px rgba(29, 158, 117, 0.08);
+    padding: 0;
+    color: inherit;
+    text-align: left;
   }
   
   .article-card:hover {
@@ -80,28 +133,46 @@
   }
   
   .article-cover {
-    height: 120px;
+    height: 110px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: end;
+    padding: 1rem;
     position: relative;
     overflow: hidden;
   }
   
-  .article-cover.sleep { background: linear-gradient(135deg, #E6F1FB, #B5D4F4); }
-  .article-cover.study { background: linear-gradient(135deg, #EBF5FF, #BEE3F8); }
-  .article-cover.activity { background: linear-gradient(135deg, #EAF3DE, #C0DD97); }
-  .article-cover.screen { background: linear-gradient(135deg, #FAEEDA, #FAC775); }
-  
-  .article-cover-icon {
-    font-size: 56px;
-    opacity: 0.9;
+  .article-cover.sleep_rhythm { background: linear-gradient(135deg, #E6F1FB, #B5D4F4); }
+  .article-cover.move_mode { background: linear-gradient(135deg, #EAF3DE, #C0DD97); }
+  .article-cover.cognitive_strain { background: linear-gradient(135deg, #FAEEDA, #F7CE85); }
+  .article-cover.social_energy { background: linear-gradient(135deg, #FAECE7, #F2C8BA); }
+
+  .article-cover-label {
+    display: inline-flex;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    color: #1A2E28;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 1;
   }
-  
+
   .article-cover-img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .article-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(26, 46, 40, 0.28));
   }
 
   .article-body {
@@ -112,6 +183,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     margin-bottom: 10px;
   }
   
@@ -122,14 +194,15 @@
     border-radius: 20px;
   }
   
-  .source-badge.peer { background: #E6F1FB; color: #185FA5; }
+  .source-badge.healthdirect { background: #E6F1FB; color: #185FA5; }
   .source-badge.headspace { background: #EBF5FF; color: #2B6CB0; }
-  .source-badge.abc { background: #FAEEDA; color: #6B4E10; }
-  .source-badge.aihw { background: #FAECE7; color: #6B2010; }
+  .source-badge.who { background: #EAF3DE; color: #3B6D11; }
+  .source-badge.reachout { background: #FAECE7; color: #8F3C20; }
   
   .read-time {
     font-size: 11px;
     color: #90B4D4;
+    flex-shrink: 0;
   }
   
   .article-title {
@@ -155,10 +228,29 @@
     font-weight: 500;
   }
   
-  .article-tag.sleep { background: #E6F1FB; color: #185FA5; }
-  .article-tag.study { background: #EBF5FF; color: #2B6CB0; }
-  .article-tag.activity { background: #EAF3DE; color: #3B6D11; }
-  .article-tag.screen { background: #FAEEDA; color: #6B4E10; }
+  .article-tag.sleep_rhythm,
+  .recommended-topic.sleep_rhythm {
+    background: #E6F1FB;
+    color: #185FA5;
+  }
+
+  .article-tag.move_mode,
+  .recommended-topic.move_mode {
+    background: #EAF3DE;
+    color: #3B6D11;
+  }
+
+  .article-tag.cognitive_strain,
+  .recommended-topic.cognitive_strain {
+    background: #FAEEDA;
+    color: #8E6511;
+  }
+
+  .article-tag.social_energy,
+  .recommended-topic.social_energy {
+    background: #FAECE7;
+    color: #8F3C20;
+  }
   
   .modal-overlay {
     position: fixed;
@@ -186,10 +278,10 @@
     height: 5px;
   }
   
-  .modal-bar.sleep { background: #378ADD; }
-  .modal-bar.study { background: #4A9EDB; }
-  .modal-bar.activity { background: #76B9E8; }
-  .modal-bar.screen { background: #EF9F27; }
+  .modal-bar.sleep_rhythm { background: #378ADD; }
+  .modal-bar.move_mode { background: #76B9E8; }
+  .modal-bar.cognitive_strain { background: #EF9F27; }
+  .modal-bar.social_energy { background: #D97855; }
   
   .modal-header {
     display: flex;
@@ -219,7 +311,7 @@
     border-radius: 50%;
     background: #F7F9F8;
     border: 0.5px solid rgba(29, 158, 117, 0.15);
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -246,6 +338,14 @@
     padding-bottom: 1.5rem;
     border-bottom: 0.5px solid rgba(29, 158, 117, 0.15);
   }
+
+  .modal-hero-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 16px;
+    margin-bottom: 1.25rem;
+  }
   
   .modal-source-box {
     background: #F7F9F8;
@@ -255,6 +355,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
   }
   
   .modal-source-label {
@@ -275,11 +376,17 @@
   .modal-source-link {
     font-size: 13px;
     color: #4A9EDB;
-    font-weight: 500;
-    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .modal-source-link:hover {
+    text-decoration: underline;
   }
   
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
+    .recommended-grid,
     .articles-grid {
       grid-template-columns: 1fr;
     }

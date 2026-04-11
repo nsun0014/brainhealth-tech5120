@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation, Navigate } from 'react-router-dom'
 import './Dashboard.css'
 import { ARTICLES } from '../data/articles'
@@ -8,9 +9,7 @@ import PhysicalActivityChart from '../components/PhysicalActivityChart'
 const DEFAULT_SNAPSHOT = {
   overallScore: 70,
   overallInterpretation: 'moderate, room to improve',
-  responses: {
-    Q1: 3,
-  },
+  responses: { Q1: 3 },
   domainScores: [
     { key: 'sleep_rhythm', label: 'Sleep Rhythm', score: 67 },
     { key: 'move_mode', label: 'Move Mode', score: 75 },
@@ -19,11 +18,14 @@ const DEFAULT_SNAPSHOT = {
   ],
 }
 
-const SLEEP_AVERAGE_18_24 = {
-  overall: 7.6,
-  weeknight: 7.51,
-  weekend: 7.59,
+const DOMAIN_ICONS = {
+  sleep_rhythm: '🌙',
+  move_mode: '🏃',
+  cognitive_strain: '🧠',
+  social_energy: '🤝',
 }
+
+const SLEEP_AVERAGE_18_24 = { overall: 7.6, weeknight: 7.51, weekend: 7.59 }
 
 const SLEEP_BANDS = {
   1: { code: 1, label: 'less than 6 hours', midpoint: 5.5, share: 9.5 },
@@ -53,25 +55,35 @@ function statusCopy(score) {
   return 'Needs attention'
 }
 
-function insightCopy(key) {
-  const copy = {
-    sleep_rhythm: 'Steadier sleep timing and more refreshing rest support memory, focus, and recovery during study or work-heavy weeks.',
-    move_mode: 'Regular movement can support energy, mood, and concentration, especially when daily life becomes desk-heavy or screen-heavy.',
-    cognitive_strain: 'Lower cognitive strain usually means better capacity for concentration, learning, and managing uni, work, and life pressure.',
-    social_energy: 'Feeling connected to other people can buffer stress and support resilience when young adult life starts to feel isolating or draining.',
-  }
-
-  return copy[key]
+function CircleProgress({ score, tone, size = 60 }) {
+  const r = (size - 10) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ - (circ * score) / 100
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#F0F4F8" strokeWidth="6"/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none"
+        stroke={tone === 'good' ? '#4A9EDB' : tone === 'warn' ? '#EF9F27' : '#D85A30'}
+        strokeWidth="6"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size/2} ${size/2})`}
+      />
+    </svg>
+  )
 }
 
 function Dashboard() {
   const location = useLocation()
+  const [dismissedWarnings, setDismissedWarnings] = useState([])
+  const [showHistory, setShowHistory] = useState(false)
   const storedSnapshot = localStorage.getItem('brainboostSnapshot')
   const snapshot = location.state ?? (storedSnapshot ? JSON.parse(storedSnapshot) : DEFAULT_SNAPSHOT)
 
-  if (!snapshot) {
-    return <Navigate to="/onboarding" replace />
-  }
+  if (!snapshot) return <Navigate to="/onboarding" replace />
+
+  const dismissWarning = (key) => setDismissedWarnings(prev => [...prev, key])
 
   const sortedDomains = [...snapshot.domainScores].sort((a, b) => b.score - a.score)
   const strongest = sortedDomains[0]
@@ -80,27 +92,19 @@ function Dashboard() {
   const recommendedArticles = getRecommendedArticles(snapshot, ARTICLES, 3)
   const selectedSleepBand = SLEEP_BANDS[snapshot.responses?.Q1]
   const selectedActivityBand = ACTIVITY_BANDS[snapshot.responses?.Q4]
-  const sleepDifference = selectedSleepBand
-    ? Math.abs(selectedSleepBand.midpoint - SLEEP_AVERAGE_18_24.overall).toFixed(1)
-    : null
-  const sleepComparison = selectedSleepBand
-    ? selectedSleepBand.midpoint >= SLEEP_AVERAGE_18_24.overall
-      ? 'slightly above'
-      : 'slightly below'
-    : null
-  const sleepSummary = selectedSleepBand
-    ? `You told us you usually sleep ${selectedSleepBand.label}. For people aged 18-24, the average is about ${SLEEP_AVERAGE_18_24.overall.toFixed(1)} hours per night, and around ${selectedSleepBand.share}% fall into the same sleep range as you.`
-    : null
 
   const today = new Intl.DateTimeFormat('en-AU', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   }).format(new Date())
+
+  const overallTone = statusTone(snapshot.overallScore)
+  const circ = 2 * Math.PI * 54
+  const offset = circ - (circ * snapshot.overallScore) / 100
 
   return (
     <div className="dash-wrap">
+
+      {/* Header */}
       <div className="dash-header">
         <div>
           <div className="dash-greeting">Your latest check-in</div>
@@ -109,6 +113,7 @@ function Dashboard() {
         <div className="dash-date">{today}</div>
       </div>
 
+      {/* Hero */}
       <div className="hero-card">
         <div className="hero-left">
           <div className="hero-badge">
@@ -119,128 +124,197 @@ function Dashboard() {
           <div className="hero-score">
             {snapshot.overallScore} <span className="hero-score-max">/ 100</span>
           </div>
-          <div className="hero-score-sub">
-            Built from your sleep, movement, stress load, and social energy
+          <div className="hero-score-sub">Sleep · Movement · Stress · Social</div>
+        </div>
+        <div className="hero-ring-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="10"/>
+            <circle cx="60" cy="60" r="54" fill="none"
+              stroke="rgba(93,202,165,0.9)" strokeWidth="10"
+              strokeDasharray={circ} strokeDashoffset={offset}
+              strokeLinecap="round" transform="rotate(-90 60 60)"/>
+          </svg>
+          <div className="hero-ring-label">
+            <div className="hero-ring-num">{snapshot.overallScore}</div>
+            <div className="hero-ring-sub">/ 100</div>
           </div>
         </div>
-        <div className="hero-right">
-          <svg width="90" height="90" viewBox="0 0 90 90">
-            <circle cx="45" cy="45" r="36" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="8" />
-            <circle
-              cx="45"
-              cy="45"
-              r="36"
-              fill="none"
-              stroke="rgba(93,202,165,0.8)"
-              strokeWidth="8"
-              strokeDasharray="226"
-              strokeDashoffset={226 - (226 * snapshot.overallScore) / 100}
+      </div>
+
+      {/* Domain Rings */}
+<div className="rings-card">
+  {snapshot.domainScores.map((domain, index) => {
+    const colors = ['#4A9EDB', '#EF9F27', '#D85A30', '#9B59B6']
+    const tone = statusTone(domain.score)
+    const r = 45
+    const circ = 2 * Math.PI * r
+    const offset = circ - (circ * domain.score) / 100
+    return (
+      <div key={domain.key} className={`ring-item ring-item-${index}`}>
+        <div className="ring-svg-wrap">
+          <svg width="110" height="110" viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r={r} fill="none"
+              stroke={`${colors[index]}22`} strokeWidth="10"/>
+            <circle cx="55" cy="55" r={r} fill="none"
+              stroke={colors[index]} strokeWidth="10"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
               strokeLinecap="round"
-              transform="rotate(-90 45 45)"
+              transform="rotate(-90 55 55)"
+              className="ring-progress"
+              style={{
+                '--target-offset': offset,
+                '--circ': circ,
+              }}
             />
           </svg>
-        </div>
-      </div>
-
-      <div className="metric-row">
-        {snapshot.domainScores.map((domain) => {
-          const tone = statusTone(domain.score)
-
-          return (
-            <div key={domain.key} className="metric-card">
-              <div className={`metric-icon ${tone}`}>{domain.score}</div>
-              <div className="metric-label">{domain.label}</div>
-              <div className="metric-value">
-                {domain.score}
-                <span className="metric-unit">/100</span>
-              </div>
-              <div className="metric-bar-track">
-                <div className={`metric-bar-fill ${tone}`} style={{ width: `${domain.score}%` }}></div>
-              </div>
-              <div className={`metric-status ${tone}`}>{statusCopy(domain.score)}</div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="section-heading">Biggest shifts</div>
-
-      <div className="warning-card">
-        <div className="warning-icon">1</div>
-        <div className="warning-body">
-          <div className="warning-title">{priority.label} is your main priority right now</div>
-          <div className="warning-text">
-            This scored {priority.score}/100, so it is the clearest place to start if you want the fastest lift.
+          <div className="ring-center-label">
+            <div className="ring-score-num" style={{ color: colors[index] }}>{domain.score}</div>
+            <div className="ring-score-sub">/100</div>
           </div>
         </div>
+        <div className="ring-info">
+          <div className="ring-domain-label">{domain.label}</div>
+          <div className={`ring-domain-status ${tone}`}>{statusCopy(domain.score)}</div>
+        </div>
+        <div className="ring-hover-popup" style={{ borderColor: colors[index] }}>
+          <div className="ring-popup-icon">{DOMAIN_ICONS[domain.key]}</div>
+          <div className="ring-popup-score" style={{ color: colors[index] }}>{domain.score}/100</div>
+          <div className="ring-popup-label">{domain.label}</div>
+          <div className={`ring-popup-status ${tone}`}>{statusCopy(domain.score)}</div>
+        </div>
       </div>
+    )
+  })}
+</div>
 
-      <div className="warning-card red">
-        <div className="warning-icon">2</div>
-        <div className="warning-body">
-          <div className="warning-title">{secondaryPriority.label} is the next area to watch</div>
-          <div className="warning-text">
-            This is the next best lever to work on after your top priority.
-          </div>
-        </div>
-      </div>
 
-      <div className="section-heading">What stands out</div>
+      {/* Biggest Shifts*/}
+<div className="section-heading">Biggest shifts</div>
 
-      <div className="insight-card">
-        <div className="insight-dot"></div>
-        <div className="insight-text">
-          <strong>{strongest.label} is your strongest domain.</strong> It scored {strongest.score}/100, which
-          suggests you already have a solid habit stack in this area.
+<div className="toast-stack">
+  {!dismissedWarnings.includes('priority') && (
+    <div className={`toast-card toast-${statusTone(priority.score)}`}>
+      <div className="toast-left">
+        <div className="toast-icon-wrap">
+          <span className="toast-emoji">{DOMAIN_ICONS[priority.key]}</span>
+          <span className="toast-pulse"></span>
         </div>
       </div>
-      {selectedSleepBand && (
-        <div className="insight-card">
-          <div className="insight-dot blue"></div>
-          <div className="insight-text">
-            <strong>Your sleep sits {sleepComparison} the age-group average.</strong> {sleepSummary} That is about{' '}
-            {sleepDifference} hours away from the average benchmark.
-          </div>
-        </div>
-      )}
-      <div className="insight-card">
-        <div className="insight-dot amber"></div>
-        <div className="insight-text">
-          <strong>{priority.label} is where your energy leaks the most right now.</strong> {insightCopy(priority.key)}
-        </div>
+      <div className="toast-body">
+        <div className="toast-tag">⚠ Priority 1</div>
+        <div className="toast-title">{priority.label}</div>
+        <div className="toast-score">{priority.score}<span>/100</span></div>
+        <div className="toast-desc">This is your main area to focus on right now.</div>
       </div>
-      <div className="insight-card">
-        <div className="insight-dot blue"></div>
-        <div className="insight-text">
-          <strong>Your overall vibe is {snapshot.overallInterpretation}.</strong> Small changes in your lowest
-          one or two domains should shift your next snapshot the most.
-        </div>
-      </div>
+      <button className="toast-dismiss" onClick={() => dismissWarning('priority')}>×</button>
+    </div>
+  )}
 
+  {!dismissedWarnings.includes('secondary') && (
+    <div className={`toast-card toast-${statusTone(secondaryPriority.score)}`}>
+      <div className="toast-left">
+        <div className="toast-icon-wrap">
+          <span className="toast-emoji">{DOMAIN_ICONS[secondaryPriority.key]}</span>
+          <span className="toast-pulse"></span>
+        </div>
+      </div>
+      <div className="toast-body">
+        <div className="toast-tag">↑ Priority 2</div>
+        <div className="toast-title">{secondaryPriority.label}</div>
+        <div className="toast-score">{secondaryPriority.score}<span>/100</span></div>
+        <div className="toast-desc">Next best lever to work on after your top priority.</div>
+      </div>
+      <button className="toast-dismiss" onClick={() => dismissWarning('secondary')}>×</button>
+    </div>
+  )}
+</div>
+
+{dismissedWarnings.length > 0 && (
+  <div className="dismissed-section">
+    <button className="dismissed-toggle" onClick={() => setShowHistory(!showHistory)}>
+      {showHistory ? 'Hide' : 'Show'} dismissed ({dismissedWarnings.length})
+    </button>
+    {showHistory && (
+      <div className="dismissed-list">
+        {dismissedWarnings.includes('priority') && (
+          <div className="dismissed-item">{priority.label} — main priority</div>
+        )}
+        {dismissedWarnings.includes('secondary') && (
+          <div className="dismissed-item">{secondaryPriority.label} — next to watch</div>
+        )}
+      </div>
+    )}
+  </div>
+)}
+
+      
+      {/* What Stands Out */}
+<div className="section-heading">What stands out</div>
+
+<div className="standout-grid">
+  <div className="standout-card green">
+    <img className="standout-img" src="https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?w=200&q=80" alt="strongest" />
+    <div className="standout-label">Strongest</div>
+    <div className="standout-domain">{strongest.label}</div>
+    <div className="standout-score">{strongest.score}/100</div>
+    <div className="standout-bar-track">
+      <div className="standout-bar-fill green" style={{ '--target-width': `${strongest.score}%` }}></div>
+    </div>
+  </div>
+  <div className="standout-card red">
+    <img className="standout-img" src="https://images.unsplash.com/photo-1559757175-5700dde675bc?w=200&q=80" alt="focus" />
+    <div className="standout-label">Focus here</div>
+    <div className="standout-domain">{priority.label}</div>
+    <div className="standout-score">{priority.score}/100</div>
+    <div className="standout-bar-track">
+      <div className="standout-bar-fill red" style={{ '--target-width': `${priority.score}%` }}></div>
+    </div>
+  </div>
+  {selectedSleepBand && (
+    <div className="standout-card blue">
+      <img className="standout-img" src="https://images.unsplash.com/photo-1586042091284-bd35c8c1d917?w=200&q=80" alt="sleep" />
+      <div className="standout-label">Your sleep</div>
+      <div className="standout-domain">{selectedSleepBand.midpoint}h avg</div>
+      <div className="standout-score">Aus avg {SLEEP_AVERAGE_18_24.overall}h</div>
+      <div className="standout-bar-track">
+        <div className="standout-bar-fill blue" style={{ '--target-width': `${(selectedSleepBand.midpoint / 10) * 100}%` }}></div>
+      </div>
+    </div>
+  )}
+  <div className="standout-card amber">
+    <img className="standout-img" src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&q=80" alt="overall" />
+    <div className="standout-label">Overall vibe</div>
+    <div className="standout-domain">{snapshot.overallScore}/100</div>
+    <div className="standout-score">{snapshot.overallInterpretation}</div>
+    <div className="standout-bar-track">
+      <div className="standout-bar-fill amber" style={{ '--target-width': `${snapshot.overallScore}%` }}></div>
+    </div>
+  </div>
+</div>
+
+      {/* Reads for You */}
       <div className="section-heading">Reads for you</div>
 
-      <div className="insight-card recommendation-stack">
-        <div className="insight-dot"></div>
-        <div className="insight-text">
-          <strong>Start here.</strong> These reads are stacked from your lowest-scoring areas first, so you can
-          focus on what actually moves the needle.
-          <div className="dashboard-recommendations">
-            {recommendedArticles.map((article) => (
-              <Link key={article.id} className="dashboard-recommendation-link" to="/articles">
-                {article.title}
-              </Link>
-            ))}
-          </div>
-        </div>
+      <div className="reads-grid">
+        {recommendedArticles.map((article) => (
+          <Link key={article.id} className="read-card" to="/articles">
+            <img className="read-img" src={article.image} alt={article.title} />
+            <div className="read-body">
+              <div className={`read-tag ${article.topic}`}>{article.topic.replace('_', ' ')}</div>
+              <div className="read-title">{article.title}</div>
+            </div>
+          </Link>
+        ))}
       </div>
 
+      {/* Charts */}
       <div className="section-heading">Sleep decoded</div>
-
       <SleepDurationChart userSleepBand={selectedSleepBand} />
 
       <div className="section-heading">Movement decoded</div>
-
       <PhysicalActivityChart userActivityBand={selectedActivityBand} />
+
     </div>
   )
 }

@@ -2,140 +2,90 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Onboarding.css'
 
-const RESPONSE_LABELS = ['Never', 'Rarely', 'Sometimes', 'Often', 'Always']
-
 const QUESTIONNAIRE_STEPS = [
   {
     key: 'sleep_rhythm',
     eyebrow: 'Domain 1',
     title: 'Sleep Rhythm',
-    description: 'These questions look at how consistent and refreshing your sleep has been lately.',
-    questions: [
-      {
-        id: 'Q1',
-        text: 'On most nights, how many hours of sleep do you usually get?',
-        options: [
-          'Less than 6 hours',
-          '6 to less than 7 hours',
-          '7 to less than 8 hours',
-          '8 to less than 9 hours',
-          '9 hours or more',
-        ],
-      },
-      {
-        id: 'Q2',
-        text: 'Over the past 2 weeks, how often did you feel your sleep was not refreshing?',
-        options: RESPONSE_LABELS,
-      },
-      {
-        id: 'Q3',
-        text: 'Over the past 2 weeks, how often did you have trouble falling asleep or staying asleep?',
-        options: RESPONSE_LABELS,
-      },
-    ],
+    description:
+      'A quick check on how much sleep you usually get so we can place your snapshot against healthy habit patterns.',
+    question: {
+      id: 'Q1',
+      text: 'On most nights, how many hours of sleep do you usually get?',
+      options: [
+        'Less than 6 hours',
+        '6 to less than 7 hours',
+        '7 to less than 8 hours',
+        '8 to less than 9 hours',
+        '9 hours or more',
+      ],
+    },
   },
   {
     key: 'move_mode',
     eyebrow: 'Domain 2',
     title: 'Move Mode',
-    description: 'Your movement habits help us estimate how much physical activity is supporting your brain health.',
-    questions: [
-      {
-        id: 'Q4',
-        text: 'On a usual day, how much moderate or vigorous physical activity do you get?',
-        options: [
-          'Less than 30 minutes',
-          '30 minutes to less than 1 hour',
-          '1 to less than 1.5 hours',
-          '1.5 to less than 2 hours',
-          '2 to less than 2.5 hours',
-        ],
-      },
-      {
-        id: 'Q5',
-        text: 'How would you describe your usual daily movement?',
-        options: [
-          'Mostly sitting',
-          'A little light movement',
-          'Some walking or activity',
-          'Active most of the day',
-          'Very active most days',
-        ],
-      },
-      {
-        id: 'Q6',
-        text: 'In a usual week, how often do you do exercise that makes you breathe harder, such as brisk walking, gym, sport, or cycling?',
-        options: ['Never', '1 day', '2 days', '3-4 days', '5 or more days'],
-      },
-    ],
+    description:
+      'This helps us estimate how active your routine is across a usual week, not just on your best days.',
+    question: {
+      id: 'Q2',
+      text: 'In a usual week, on how many days are you physically active for at least 30 minutes?',
+      options: ['0 days', '1-2 days', '3-4 days', '5-6 days', '7 days'],
+    },
   },
   {
-    key: 'cognitive_strain',
+    key: 'screen_exposure',
     eyebrow: 'Domain 3',
-    title: 'Cognitive Strain',
-    description: 'This section focuses on overload, mental fatigue, and day-to-day pressure.',
-    questions: [
-      {
-        id: 'Q7',
-        text: 'Over the past 2 weeks, how often have you felt mentally overloaded by study, work, or daily responsibilities?',
-        options: RESPONSE_LABELS,
-      },
-      {
-        id: 'Q8',
-        text: 'Over the past 2 weeks, how often did you find it hard to focus because your mind felt tired or cluttered?',
-        options: RESPONSE_LABELS,
-      },
-      {
-        id: 'Q9',
-        text: 'Over the past 2 weeks, how often did everyday demands feel like they were piling up faster than you could manage them?',
-        options: RESPONSE_LABELS,
-      },
-    ],
+    title: 'Screen Exposure',
+    description:
+      'Late-evening screen time can shape sleep quality, focus, and mental reset, so this checks your daily screen load.',
+    question: {
+      id: 'Q3',
+      text: 'On average, how many hours per day do you spend on screens, particularly during the late evening or before sleep?',
+      options: [
+        'Less than 2 hours',
+        '2-4 hours',
+        '4-6 hours',
+        '6-8 hours',
+        'More than 8 hours',
+      ],
+    },
   },
   {
     key: 'social_energy',
     eyebrow: 'Domain 4',
     title: 'Social Energy',
-    description: 'Social connection can protect energy, resilience, and overall wellbeing.',
-    questions: [
-      {
-        id: 'Q10',
-        text: 'Over the past 2 weeks, how often did you feel meaningfully connected to other people?',
-        options: RESPONSE_LABELS,
-      },
-      {
-        id: 'Q11',
-        text: 'When you feel stressed or drained, how often do you have someone you can talk to?',
-        options: RESPONSE_LABELS,
-      },
-      {
-        id: 'Q12',
-        text: 'Over the past 2 weeks, how often did you feel socially drained or disconnected, even when around other people?',
-        options: RESPONSE_LABELS,
-      },
-    ],
+    description:
+      'This looks at whether you have been feeling meaningfully connected to other people lately.',
+    question: {
+      id: 'Q4',
+      text: 'Over the past 2 weeks, how often did you feel meaningfully connected to other people?',
+      options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'],
+    },
   },
 ]
 
 const DOMAIN_CONFIG = {
-  sleep_rhythm: { label: 'Sleep Rhythm', questions: ['Q1', 'Q2', 'Q3'], reverseScored: ['Q2', 'Q3'] },
-  move_mode: { label: 'Move Mode', questions: ['Q4', 'Q5', 'Q6'], reverseScored: [] },
-  cognitive_strain: { label: 'Cognitive Strain', questions: ['Q7', 'Q8', 'Q9'], reverseScored: ['Q7', 'Q8', 'Q9'] },
-  social_energy: { label: 'Social Energy', questions: ['Q10', 'Q11', 'Q12'], reverseScored: ['Q12'] },
+  sleep_rhythm: { questionId: 'Q1', label: 'Sleep Rhythm', reverse: false },
+  move_mode: { questionId: 'Q2', label: 'Move Mode', reverse: false },
+  screen_exposure: { questionId: 'Q3', label: 'Screen Exposure', reverse: true },
+  social_energy: { questionId: 'Q4', label: 'Social Energy', reverse: false },
+}
+
+const LEGACY_DOMAIN_KEYS = {
+  sleep_rhythm: 'sleep_rhythm',
+  move_mode: 'move_mode',
+  screen_exposure: 'cognitive_strain',
+  social_energy: 'social_energy',
 }
 
 function reverseScore(value) {
   return 6 - value
 }
 
-function calculateDomainScore(responses, { questions, reverseScored }) {
-  const raw = questions.reduce((sum, questionId) => {
-    const value = responses[questionId]
-    const adjustedValue = reverseScored.includes(questionId) ? reverseScore(value) : value
-    return sum + adjustedValue
-  }, 0)
-
-  return Math.round(((raw - 3) / 12) * 100)
+function calculateDomainScore(value, reverse = false) {
+  const adjusted = reverse ? reverseScore(value) : value
+  return adjusted * 20
 }
 
 function interpretScore(score) {
@@ -171,9 +121,7 @@ function Onboarding() {
     setShowValidation(false)
   }
 
-  const stepComplete = currentStep
-    ? currentStep.questions.every((question) => responses[question.id])
-    : true
+  const stepComplete = currentStep ? Boolean(responses[currentStep.question.id]) : true
 
   const nextStep = () => {
     if (!stepComplete) {
@@ -197,22 +145,40 @@ function Onboarding() {
   const domainScores = Object.entries(DOMAIN_CONFIG).map(([key, config]) => ({
     key,
     label: config.label,
-    score: calculateDomainScore(responses, config),
+    score: calculateDomainScore(responses[config.questionId], config.reverse),
   }))
 
+  const adjustedScores = Object.values(DOMAIN_CONFIG).map((config) =>
+    config.reverse ? reverseScore(responses[config.questionId]) : responses[config.questionId],
+  )
   const overallScore = Math.round(
-    domainScores.reduce((sum, domain) => sum + domain.score, 0) / domainScores.length,
+    (adjustedScores.reduce((sum, value) => sum + value, 0) / adjustedScores.length) * 20,
   )
   const interpretation = interpretScore(overallScore)
   const insights = buildInsights(domainScores)
 
   const finishOnboarding = () => {
+    const dashboardResponses = {
+      Q1: responses.Q1,
+      Q2: responses.Q2,
+      Q3: responses.Q3,
+      Q4: responses.Q2,
+      Q4_social: responses.Q4,
+    }
+
+    const dashboardDomainScores = domainScores.map((domain) => ({
+      ...domain,
+      key: LEGACY_DOMAIN_KEYS[domain.key],
+    }))
+
     const payload = {
       completedAt: new Date().toISOString(),
-      responses,
+      questionnaireVersion: 'iteration-1-final-4q',
+      responses: dashboardResponses,
+      questionnaireResponses: responses,
       overallScore,
       overallInterpretation: interpretation,
-      domainScores,
+      domainScores: dashboardDomainScores,
     }
 
     localStorage.setItem('brainboostSnapshot', JSON.stringify(payload))
@@ -225,7 +191,9 @@ function Onboarding() {
         <div className="ob-progress-track">
           <div className="ob-progress-fill" style={{ width: `${((step + 1) / totalSteps) * 100}%` }}></div>
         </div>
-        <div className="ob-step-label">Step {step + 1} of {totalSteps}</div>
+        <div className="ob-step-label">
+          Step {step + 1} of {totalSteps}
+        </div>
       </div>
 
       <div className="ob-card">
@@ -236,33 +204,31 @@ function Onboarding() {
             <div className="ob-desc">{currentStep.description}</div>
 
             <div className="question-list">
-              {currentStep.questions.map((question) => (
-                <div key={question.id} className="question-card">
-                  <label className="field-label">{question.text}</label>
-                  <div className="option-grid cols-1">
-                    {question.options.map((option, index) => {
-                      const value = index + 1
-                      const selected = responses[question.id] === value
+              <div className="question-card">
+                <label className="field-label">{currentStep.question.text}</label>
+                <div className="option-grid cols-1">
+                  {currentStep.question.options.map((option, index) => {
+                    const value = index + 1
+                    const selected = responses[currentStep.question.id] === value
 
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          className={`opt-btn answer-option ${selected ? 'selected' : ''}`}
-                          onClick={() => setAnswer(question.id, value)}
-                        >
-                          <span className="answer-scale">{value}</span>
-                          <span className="answer-label">{option}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`opt-btn answer-option ${selected ? 'selected' : ''}`}
+                        onClick={() => setAnswer(currentStep.question.id, value)}
+                      >
+                        <span className="answer-scale">{value}</span>
+                        <span className="answer-label">{option}</span>
+                      </button>
+                    )
+                  })}
                 </div>
-              ))}
+              </div>
             </div>
 
             {showValidation && (
-              <div className="validation-text">Please answer all questions before continuing.</div>
+              <div className="validation-text">Please choose one answer before continuing.</div>
             )}
 
             <div className="ob-footer">
@@ -285,8 +251,8 @@ function Onboarding() {
             <div className="ob-eyebrow">Your Result</div>
             <div className="ob-title">Your brain health snapshot is ready</div>
             <div className="ob-desc">
-              This is a non-clinical lifestyle snapshot based on your answers across sleep, movement,
-              cognitive strain, and social energy.
+              This score is a quick, non-clinical snapshot of four everyday areas linked to brain
+              health: sleep, movement, screen exposure, and social connection.
             </div>
 
             <div className="score-ring">
@@ -313,8 +279,8 @@ function Onboarding() {
 
             <div className="result-title">{interpretation}</div>
             <div className="result-tagline">
-              Your score is the average of four domain scores: Sleep Rhythm, Move Mode, Cognitive
-              Strain, and Social Energy.
+              Your final score comes from four adjusted question scores, with screen exposure
+              reverse-scored so a higher total always means stronger current habits.
             </div>
 
             <div className="result-grid">
@@ -339,8 +305,8 @@ function Onboarding() {
             <div className="tip-box">
               <div className="tip-label">How scoring works</div>
               <div className="tip-text">
-                Some questions are reverse-scored so that a higher final score always reflects
-                stronger current habits and lower day-to-day strain.
+                Sleep, movement, and social energy score directly. Screen exposure is reverse-scored
+                because more late-evening screen time is treated as a weaker protective habit.
               </div>
             </div>
 

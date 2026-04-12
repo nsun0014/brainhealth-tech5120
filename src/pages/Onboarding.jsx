@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Onboarding.css'
 
@@ -79,6 +79,9 @@ const LEGACY_DOMAIN_KEYS = {
   social_energy: 'social_energy',
 }
 
+const SCORE_RING_RADIUS = 50
+const SCORE_RING_CIRCUMFERENCE = 2 * Math.PI * SCORE_RING_RADIUS
+
 function reverseScore(value) {
   return 6 - value
 }
@@ -95,12 +98,58 @@ function interpretScore(score) {
   return 'priority area for support'
 }
 
+function getScoreTone(score) {
+  if (score >= 75) {
+    return {
+      tone: 'high',
+      kicker: 'Recovery-style snapshot',
+      message: 'You are showing a strong base right now. Keep protecting the habits doing the heavy lifting.',
+    }
+  }
+  if (score >= 50) {
+    return {
+      tone: 'mid',
+      kicker: 'Recovery-style snapshot',
+      message: 'Your baseline is decent, but one or two habits are dragging the full picture down.',
+    }
+  }
+  return {
+    tone: 'low',
+    kicker: 'Recovery-style snapshot',
+    message: 'Your system looks under pressure right now. Start with the lowest-scoring area first.',
+  }
+}
+
 function buildInsights(domainEntries) {
   const sorted = [...domainEntries].sort((a, b) => b.score - a.score)
   return {
     strengths: sorted.slice(0, 2),
     priorities: sorted.slice(-2).reverse(),
   }
+}
+
+function AnimatedScore({ value, duration = 1100 }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    let frameId
+    const start = performance.now()
+
+    const tick = (now) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplayValue(Math.round(value * eased))
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick)
+      }
+    }
+
+    frameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frameId)
+  }, [value, duration])
+
+  return displayValue
 }
 
 function Onboarding() {
@@ -156,6 +205,8 @@ function Onboarding() {
   )
   const interpretation = interpretScore(overallScore)
   const insights = buildInsights(domainScores)
+  const progressPercent = ((step + 1) / totalSteps) * 100
+  const scoreTone = getScoreTone(overallScore)
 
   const finishOnboarding = () => {
     const dashboardResponses = {
@@ -187,18 +238,24 @@ function Onboarding() {
 
   return (
     <div className="ob-wrap">
+      <div className="ob-ambient ob-ambient-one"></div>
+      <div className="ob-ambient ob-ambient-two"></div>
+      <div className="ob-ambient ob-ambient-three"></div>
+
       <div className="ob-progress-row">
         <div className="ob-progress-track">
-          <div className="ob-progress-fill" style={{ width: `${((step + 1) / totalSteps) * 100}%` }}></div>
+          <div className="ob-progress-fill" style={{ width: `${progressPercent}%` }}></div>
         </div>
-        <div className="ob-step-label">
-          Step {step + 1} of {totalSteps}
-        </div>
+        <div className="ob-step-label">Step {step + 1} of {totalSteps}</div>
       </div>
 
       <div className="ob-card">
         {!isResultStep && (
           <div>
+            <div className="ob-step-meta">
+              <span className="ob-step-pill">{currentStep.title}</span>
+              <span className="ob-step-pill soft">{Math.round(progressPercent)}% done</span>
+            </div>
             <div className="ob-eyebrow">{currentStep.eyebrow}</div>
             <div className="ob-title">{currentStep.title}</div>
             <div className="ob-desc">{currentStep.description}</div>
@@ -248,36 +305,65 @@ function Onboarding() {
 
         {isResultStep && (
           <div>
+            <div className="ob-step-meta">
+              <span className="ob-step-pill">Snapshot complete</span>
+              <span className="ob-step-pill soft">Ready for dashboard</span>
+            </div>
             <div className="ob-eyebrow">Your Result</div>
             <div className="ob-title">Your brain health snapshot is ready</div>
-            <div className="ob-desc">
-              This score is a quick, non-clinical snapshot of four everyday areas linked to brain
-              health: sleep, movement, screen exposure, and social connection.
-            </div>
 
-            <div className="score-ring">
-              <svg width="120" height="120" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#EBF5FF" strokeWidth="10" />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  fill="none"
-                  stroke="#4A9EDB"
-                  strokeWidth="10"
-                  strokeDasharray="314"
-                  strokeDashoffset={314 - (314 * overallScore) / 100}
-                  strokeLinecap="round"
-                  transform="rotate(-90 60 60)"
-                />
-              </svg>
-              <div className="score-number">
-                <div className="score-num">{overallScore}</div>
-                <div className="score-sub">/ 100</div>
+            <div className={`snapshot-hero tone-${scoreTone.tone}`}>
+              <div className="snapshot-particles">
+                <span className="snapshot-particle particle-a"></span>
+                <span className="snapshot-particle particle-b"></span>
+                <span className="snapshot-particle particle-c"></span>
+              </div>
+              <div className="snapshot-copy">
+                <div className="snapshot-kicker">{scoreTone.kicker}</div>
+                <div className="snapshot-headline">{interpretation}</div>
+                <div className="snapshot-body">
+                  {scoreTone.message}
+                </div>
+              </div>
+
+              <div className="score-ring-wrap">
+                <div className={`score-ring tone-${scoreTone.tone}`}>
+                  <div className="score-ring-glow"></div>
+                  <svg className="score-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+                    <circle cx="60" cy="60" r={SCORE_RING_RADIUS} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="10" />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r={SCORE_RING_RADIUS}
+                      fill="none"
+                      stroke="url(#scoreGradient)"
+                      strokeWidth="10"
+                      strokeDasharray={SCORE_RING_CIRCUMFERENCE}
+                      strokeDashoffset={
+                        SCORE_RING_CIRCUMFERENCE - (SCORE_RING_CIRCUMFERENCE * overallScore) / 100
+                      }
+                      strokeLinecap="round"
+                      transform="rotate(-90 60 60)"
+                    />
+                    <defs>
+                      <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#8ed8ff" />
+                        <stop offset="52%" stopColor="#4a9edb" />
+                        <stop offset="100%" stopColor="#49b38f" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="score-number">
+                    <div className="score-num">
+                      <AnimatedScore value={overallScore} />
+                    </div>
+                    <div className="score-sub">/ 100</div>
+                  </div>
+                </div>
+                <div className="score-caption">Current brain health score</div>
               </div>
             </div>
 
-            <div className="result-title">{interpretation}</div>
             <div className="result-tagline">
               Your final score comes from four adjusted question scores, with screen exposure
               reverse-scored so a higher total always means stronger current habits.

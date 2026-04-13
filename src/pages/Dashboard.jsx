@@ -10,18 +10,6 @@ import { calculateSnapshotFromResponses } from '../utils/scoring'
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-const DEFAULT_SNAPSHOT = {
-  overallScore: 70,
-  overallInterpretation: 'moderate, room to improve',
-  responses: { Q1: 3 },
-  domainScores: [
-    { key: 'sleep_rhythm',    label: 'Sleep Rhythm',    score: 67 },
-    { key: 'move_mode',       label: 'Move Mode',       score: 75 },
-    { key: 'cognitive_strain',label: 'Cognitive Strain',score: 58 },
-    { key: 'social_energy',   label: 'Social Energy',   score: 79 },
-  ],
-}
-
 const DOMAIN_ICONS = {
   sleep_rhythm:     '🌙',
   move_mode:        '🏃',
@@ -492,7 +480,7 @@ function Dashboard() {
     }
   }
 
-  const baseSnapshot = location.state ?? parsedSnapshot ?? DEFAULT_SNAPSHOT
+  const baseSnapshot = location.state ?? parsedSnapshot
 
   const [dismissedWarnings, setDismissedWarnings] = useState([])
   const [showHistory,       setShowHistory]        = useState(false)

@@ -2,10 +2,15 @@
 // Highlights the active tab based on the current URL path.
 import { Link, useLocation } from 'react-router-dom'
 import './Navbar.css'
+import { getSnapshot } from '../utils/recommendations'
+import { calculateSnapshotFromResponses } from '../utils/scoring'
 
 function Navbar() {
   // useLocation gives us the current URL so we can mark the right tab as active
   const location = useLocation()
+  const snapshot = getSnapshot()
+  const scoringInput = snapshot?.questionnaireResponses ?? snapshot?.responses
+  const canAccessProtectedPages = Boolean(calculateSnapshotFromResponses(scoringInput))
 
   return (
     <nav className="navbar">
@@ -15,10 +20,16 @@ function Navbar() {
         <Link to="/onboarding" className={`nav-tab ${location.pathname === '/onboarding' ? 'active' : ''}`}>
           Onboarding
         </Link>
-        <Link to="/dashboard" className={`nav-tab ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+        <Link
+          to={canAccessProtectedPages ? '/dashboard' : '/onboarding'}
+          className={`nav-tab ${location.pathname === '/dashboard' ? 'active' : ''}`}
+        >
           Dashboard
         </Link>
-        <Link to="/articles" className={`nav-tab ${location.pathname === '/articles' ? 'active' : ''}`}>
+        <Link
+          to={canAccessProtectedPages ? '/articles' : '/onboarding'}
+          className={`nav-tab ${location.pathname === '/articles' ? 'active' : ''}`}
+        >
           Article Hub
         </Link>
       </div>

@@ -4,13 +4,11 @@ import Navbar from './components/Navbar'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import ArticleHub from './pages/ArticleHub'
-import { getSnapshot } from './utils/recommendations'
-import { calculateSnapshotFromResponses } from './utils/scoring'
+import { getSnapshot, hasCompletedOnboarding } from './utils/recommendations'
 
 function RequireCompletedOnboarding({ children }) {
   const snapshot = getSnapshot()
-  const scoringInput = snapshot?.questionnaireResponses ?? snapshot?.responses
-  const isCompleted = Boolean(calculateSnapshotFromResponses(scoringInput))
+  const isCompleted = hasCompletedOnboarding(snapshot)
 
   if (!isCompleted) {
     return <Navigate to="/onboarding" replace />

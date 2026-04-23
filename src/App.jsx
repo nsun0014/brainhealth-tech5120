@@ -1,48 +1,45 @@
-// Root component. Sets up the router and defines all page routes.
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import Landing from './pages/Landing'
+import { SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react'
 import Navbar from './components/Navbar'
+import Home from './pages/Home'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import ArticleHub from './pages/ArticleHub'
+import HabitTracker from './pages/HabitTracker'
+import Progress from './pages/Progress'
+import MiniGames from './pages/MiniGames'
 import { getSnapshot, hasCompletedOnboarding } from './utils/recommendations'
 
+function RequireAuth({ children }) {
+  return (
+    <>
+      <SignedIn>{children}</SignedIn>
+      <SignedOut><RedirectToSignIn /></SignedOut>
+    </>
+  )
+}
+
 function RequireCompletedOnboarding({ children }) {
+  const { isSignedIn } = useUser()
   const snapshot = getSnapshot()
   const isCompleted = hasCompletedOnboarding(snapshot)
-
-  if (!isCompleted) {
+  if (!isCompleted && !isSignedIn) {
     return <Navigate to="/onboarding" replace />
   }
-
   return children
 }
 
 function App() {
   return (
     <BrowserRouter>
-      {/* Navbar is always visible across all pages */}
-      <Navbar />
       <Routes>
-        {/* Redirect the root path to the onboarding questionnaire */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route
-          path="/dashboard"
-          element={(
-            <RequireCompletedOnboarding>
-              <Dashboard />
-            </RequireCompletedOnboarding>
-          )}
-        />
-        <Route
-          path="/articles"
-          element={(
-            <RequireCompletedOnboarding>
-              <ArticleHub />
-            </RequireCompletedOnboarding>
-          )}
-        />
+        <Route path="/" element={<Home />} />
+        <Route path="/onboarding" element={<><Navbar /><Onboarding /></>} />
+        <Route path="/dashboard" element={<RequireAuth><Navbar /><RequireCompletedOnboarding><Dashboard /></RequireCompletedOnboarding></RequireAuth>} />
+        <Route path="/habits" element={<RequireAuth><Navbar /><HabitTracker /></RequireAuth>} />
+        <Route path="/progress" element={<RequireAuth><Navbar /><Progress /></RequireAuth>} />
+        <Route path="/games" element={<><Navbar /><MiniGames /></>} />
+        <Route path="/articles" element={<RequireAuth><Navbar /><RequireCompletedOnboarding><ArticleHub /></RequireCompletedOnboarding></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   )

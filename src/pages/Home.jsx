@@ -1,124 +1,141 @@
-import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
-import { useNavigate } from 'react-router-dom'
-import './Home.css'
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react"
+import { useNavigate } from "react-router-dom"
+import { getOrCreateGuestId } from "../utils/guestAuth"
+import "./Home.css"
+
+const DOMAINS = [
+  { label: "Sleep Rhythm",    desc: "How your rest patterns shape daily energy and focus.",           color: "#1a6fa8", bg: "#e0f0ff" },
+  { label: "Move Mode",        desc: "How movement habits build resilience and mental clarity.",        color: "#1a7a5e", bg: "#dcf5ec" },
+  { label: "Cognitive Strain", desc: "How screen time and mental load affect your concentration.",      color: "#b45309", bg: "#fef3c7" },
+  { label: "Social Energy",   desc: "How social connections fuel or drain your overall wellbeing.",    color: "#6b2fa0", bg: "#f3e8ff" },
+]
 
 function Home() {
   const navigate = useNavigate()
 
   function handleGoToApp() {
-    const snapshot = JSON.parse(localStorage.getItem('brainboostSnapshot') || '{}')
-    const completed = snapshot && Object.keys(snapshot).length > 0
-    if (completed) {
-      navigate('/dashboard')
-    } else {
-      navigate('/onboarding')
-    }
+    const snapshot = JSON.parse(localStorage.getItem("brainboostSnapshot") || "{}")
+    if (snapshot && Object.keys(snapshot).length > 0) navigate("/dashboard")
+    else navigate("/onboarding")
+  }
+
+  function handleGuestLogin() {
+    getOrCreateGuestId()
+    localStorage.setItem("bb_is_guest", "true")
+    navigate("/onboarding")
   }
 
   return (
     <div className="home-page">
-      <div className="home-blob1" />
-      <div className="home-blob2" />
-      <div className="home-blob3" />
+      <div className="home-grain" />
 
+      {/* Nav */}
       <nav className="home-nav">
         <div className="home-logo">Brain<span>Boost</span></div>
         <div className="home-nav-links">
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="btn-ghost">Sign In</button>
+              <button className="nav-link-btn">Sign In</button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <button className="btn-primary">Get Started →</button>
+              <button className="nav-cta-btn">Get Started →</button>
             </SignUpButton>
           </SignedOut>
           <SignedIn>
-            <button className="btn-primary" onClick={handleGoToApp}>
-              Enter BrainBoost →
-            </button>
+            <button className="nav-cta-btn" onClick={handleGoToApp}>Open App →</button>
             <UserButton />
           </SignedIn>
         </div>
       </nav>
 
-      <div className="home-hero">
-        <div className="home-hero-left">
-          <div className="home-badge">
-            <span className="badge-dot" />
-            Free for university students
-          </div>
-          <h1 className="home-title">
-            Is your brain<br />
-            <span className="gradient-text">running on empty?</span>
+      {/* Hero — two column: text left, image right */}
+      <section className="home-hero">
+        <div className="hero-left">
+          <h1 className="hero-title">
+            Your brain on<br />
+            <span className="hero-title-accent">autopilot?</span>
           </h1>
-          <p className="home-subtitle">
-            Sleep less, scroll more, skip the gym — sound familiar?
-            See how your daily habits are affecting your brain health right now.
+          <p className="hero-sub">
+            Find out how sleep, movement, screen time, and social habits are quietly shaping your focus — in under 5 minutes.
           </p>
-          <div className="home-cta">
-            <SignedOut>
-              <SignUpButton mode="modal">
-                <button className="btn-hero">Check my brain health →</button>
-              </SignUpButton>
-              <SignInButton mode="modal">
-                <button className="btn-hero-ghost">Sign In</button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <button className="btn-hero" onClick={handleGoToApp}>
-                Check my brain health →
-              </button>
-            </SignedIn>
-          </div>
-          <p className="home-reassure">Takes 5 minutes · No medical knowledge needed · 100% free</p>
+          <SignedOut>
+              <button className="btn-ghost-link" onClick={handleGuestLogin}>Try as guest</button>
+          </SignedOut>
         </div>
-
-        <div className="home-hero-right">
+        <div className="hero-right">
           <img
-            src="https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=600https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=600&q=80q=80"
+            className="hero-img"
+            src="https://blog.medicalert.org/wp-content/uploads/2025/03/Brain-Fog-Header-Image.jpg"
             alt="Brain health"
-            className="brain-hero-img"
           />
         </div>
-      </div>
+      </section>
 
-      <div className="home-tagline">
-        <p>"Most students don't know what's draining their focus. <strong>Now you can.</strong>"</p>
-      </div>
-
-      <div className="home-stats">
-        <div className="stat-card">
-          <div className="stat-num">1 <span>in 3</span></div>
-          <div className="stat-label">Students report poor focus daily</div>
+      {/* Stats strip */}
+      <div className="stats-strip">
+        <div className="stat-item">
+          <span className="stat-big">1<em>in 3</em></span>
+          <span className="stat-desc">students struggle with focus daily</span>
         </div>
-        <div className="stat-card">
-          <div className="stat-num">5 <span>min</span></div>
-          <div className="stat-label">To get your personalised score</div>
+        <div className="stat-divider" />
+        <div className="stat-item">
+          <span className="stat-big">5<em>min</em></span>
+          <span className="stat-desc">to get your personalised score</span>
         </div>
-        <div className="stat-card">
-          <div className="stat-num">0 <span>cost</span></div>
-          <div className="stat-label">Completely free for students</div>
+        <div className="stat-divider" />
+        <div className="stat-item">
+          <span className="stat-big">4<em>domains</em></span>
+          <span className="stat-desc">of brain health measured</span>
         </div>
       </div>
 
-      <div className="home-final-cta">
-        <h2>Ready to understand your brain?</h2>
-        <p>Join students who are taking control of their brain health — one habit at a time.</p>
-        <SignedOut>
-          <SignUpButton mode="modal">
-            <button className="btn-hero">Check my brain health →</button>
-          </SignUpButton>
-        </SignedOut>
-        <SignedIn>
-          <button className="btn-hero" onClick={handleGoToApp}>
-            Check my brain health →
-          </button>
-        </SignedIn>
-      </div>
+      {/* How it works */}
+      <section className="how-section">
+        <div className="how-label">How it works</div>
+        <div className="how-steps">
+          {[
+            { n: "01", t: "Answer honestly",   d: "5 questions about your real daily habits." },
+            { n: "02", t: "Get your snapshot", d: "A personalised score across 4 brain health domains." },
+            { n: "03", t: "Read what matters", d: "Articles and tips targeted at your lowest scores." },
+          ].map(s => (
+            <div key={s.n} className="how-step">
+              <div className="step-n">{s.n}<em>step</em></div>
+              <div className="step-t">{s.t}</div>
+              <div className="step-d">{s.d}</div>
+            </div>
+          ))}
+        </div>
 
+        <div className="how-domains-label">What we measure</div>
+        <div className="how-domain-cards">
+          {DOMAINS.map(d => (
+            <div key={d.label} className="how-domain-card" style={{ "--dc": d.color, "--dbg": d.bg }}>
+              <div className="how-domain-card-label">{d.label}</div>
+              <div className="how-domain-card-desc">{d.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="final-cta">
+        <div className="final-cta-inner">
+          <p className="final-cta-kicker">Ready?</p>
+          <h2 className="final-cta-title">Understand what's<br />draining your brain.</h2>
+          <SignedOut>
+            <SignUpButton mode="modal">
+              <button className="btn-main btn-main-lg">Start my snapshot →</button>
+            </SignUpButton>
+          </SignedOut>
+          <SignedIn>
+            <button className="btn-main btn-main-lg" onClick={handleGoToApp}>Start my snapshot →</button>
+          </SignedIn>
+        </div>
+      </section>
+
+      {/* Footer */}
       <footer className="home-footer">
         <div className="home-logo">Brain<span>Boost</span></div>
-        <p>FIT5120 Team Tech N1nja · SDG 3 Good Health and Well-being</p>
       </footer>
     </div>
   )

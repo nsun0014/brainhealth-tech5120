@@ -3,7 +3,7 @@ import { useAuth, SignUpButton } from '@clerk/clerk-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import './HabitTracker.css'
 
-const API = 'http://localhost:3001/api'
+const API = import.meta.env.VITE_API_URL || 'https://brainhealth-iteration2-production.up.railway.app/api'
 const LS_KEY = 'bb_guest_habits'
 
 const isGuest = () => localStorage.getItem('bb_is_guest') === 'true'
@@ -137,8 +137,9 @@ function HabitTracker() {
       result.push({
         date: d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }),
         sleep: habit ? sleepToNum(habit.sleep_hours) : null,
-        active: habit ? (habit.physical_activity ? 1 : 0) : null,
-        hasData: !!habit
+        active: habit ? (habit.physical_activity ? 1 : 0.15) : null,
+        hasData: !!habit,
+        wasActive: habit ? habit.physical_activity : false
       })
     }
     return result
@@ -162,7 +163,7 @@ function HabitTracker() {
       {/* Guest nudge banner */}
       {guest && (
         <div className="ht-guest-banner">
-          <span>🔒 You're in guest mode — your data is saved on this device only.</span>
+          <span>You're in guest mode — your data is saved on this device only.</span>
           <SignUpButton mode="modal">
             <button className="ht-guest-cta">Sign up free to sync across devices →</button>
           </SignUpButton>
@@ -260,12 +261,12 @@ function HabitTracker() {
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={chartData} barSize={historyRange === 7 ? 28 : 12}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                    <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={24}/>
+                    <XAxis dataKey="date" tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }} axisLine={false} tickLine={false}/>
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }} axisLine={false} tickLine={false} width={24}/>
                     <Tooltip formatter={(v) => v ? [`${v} hrs`, 'Sleep'] : ['No data', 'Sleep']} contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}/>
                     <Bar dataKey="sleep" radius={[6, 6, 0, 0]}>
                       {chartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.hasData ? '#2563eb' : '#e2e8f0'} fillOpacity={entry.hasData ? 1 : 0.5}/>
+                        <Cell key={i} fill={entry.hasData ? '#2563eb' : '#bfdbfe'} fillOpacity={entry.hasData ? 1 : 0.7}/>
                       ))}
                     </Bar>
                   </BarChart>
@@ -277,11 +278,11 @@ function HabitTracker() {
                 <ResponsiveContainer width="100%" height={120}>
                   <BarChart data={chartData} barSize={historyRange === 7 ? 28 : 12}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                    <Tooltip formatter={(v, n, p) => p.payload.hasData ? [v === 1 ? 'Active' : 'Rest day', 'Activity'] : ['No data', 'Activity']} contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}/>
-                    <Bar dataKey="active" radius={[6, 6, 0, 0]}>
+                    <XAxis dataKey="date" tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }} axisLine={false} tickLine={false}/>
+                    <Tooltip formatter={(v, n, p) => p.payload.hasData ? [p.payload.wasActive ? 'Active' : 'Rest day', 'Activity'] : ['No data', 'Activity']} contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}/>
+                    <Bar dataKey="active" radius={[6, 6, 0, 0]} minPointSize={4}>
                       {chartData.map((entry, i) => (
-                        <Cell key={i} fill={!entry.hasData ? '#e2e8f0' : entry.active ? '#16a34a' : '#fca5a5'} fillOpacity={entry.hasData ? 1 : 0.5}/>
+                        <Cell key={i} fill={!entry.hasData ? '#bfdbfe' : entry.wasActive ? '#16a34a' : '#fca5a5'} fillOpacity={entry.hasData ? 1 : 0.5}/>
                       ))}
                     </Bar>
                   </BarChart>
@@ -289,7 +290,7 @@ function HabitTracker() {
                 <div className="ht-chart-legend">
                   <span><span className="legend-dot" style={{background:'#16a34a'}}/> Active</span>
                   <span><span className="legend-dot" style={{background:'#fca5a5'}}/> Rest day</span>
-                  <span><span className="legend-dot" style={{background:'#e2e8f0'}}/> No data</span>
+                  <span><span className="legend-dot" style={{background:'#bfdbfe'}}/> No data</span>
                 </div>
               </div>
             </>
@@ -307,16 +308,13 @@ function HabitTracker() {
                   </div>
                   <div className="ht-history-stats">
                     <div className="ht-stat">
-                      <span className="ht-stat-label">Sleep</span>
-                      <span className="ht-stat-value">{h.sleep_hours} hrs</span>
+                      <span className="ht-stat-value">{h.sleep_hours} hrs sleep</span>
                     </div>
                     <div className="ht-stat">
-                      <span className="ht-stat-label">Screen</span>
-                      <span className="ht-stat-value">{h.screen_time}</span>
+                      <span className="ht-stat-value">{h.screen_time} screen</span>
                     </div>
                     <div className="ht-stat">
-                      <span className="ht-stat-label">Activity</span>
-                      <span className={`ht-stat-value ${h.physical_activity ? 'green' : 'gray'}`}>
+                      <span className={`ht-stat-value ${h.physical_activity ? 'active' : 'inactive'}`}>
                         {h.physical_activity ? 'Active' : 'Rest day'}
                       </span>
                     </div>

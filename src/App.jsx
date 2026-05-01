@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react'
 import { useEffect } from 'react'
 import Navbar from './components/Navbar'
@@ -10,6 +10,8 @@ import ArticleHub from './pages/ArticleHub'
 import HabitTracker from './pages/HabitTracker'
 import Progress from './pages/Progress'
 import MiniGames from './pages/MiniGames'
+import ProjectLogin from './pages/ProjectLogin'
+import { hasProjectAccess } from './utils/projectAuth'
 import { getSnapshot, hasCompletedOnboarding } from './utils/recommendations'
 
 const isGuestUser = () => localStorage.getItem('bb_is_guest') === 'true'
@@ -91,6 +93,16 @@ function RequireAuth({ children }) {
   )
 }
 
+function RequireProjectAccess({ children }) {
+  const location = useLocation()
+
+  if (!hasProjectAccess()) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+
+  return children
+}
+
 function RequireCompletedOnboarding({ children }) {
   const { isSignedIn } = useUser()
   const snapshot = getSnapshot()
@@ -114,13 +126,14 @@ export default function App() {
     <BrowserRouter>
       <HandleAuthTransition />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/onboarding" element={<OnboardingRoute />} />
-        <Route path="/dashboard" element={<RequireAuth><Navbar /><GuestBanner /><RequireCompletedOnboarding><Dashboard /></RequireCompletedOnboarding></RequireAuth>} />
-        <Route path="/habits"    element={<RequireAuth><Navbar /><GuestBanner /><HabitTracker /></RequireAuth>} />
-        <Route path="/progress"  element={<RequireAuth><Navbar /><GuestBanner /><Progress /></RequireAuth>} />
-        <Route path="/games"     element={<><Navbar /><GuestBanner /><MiniGames /></>} />
-        <Route path="/articles"  element={<RequireAuth><Navbar /><GuestBanner /><RequireCompletedOnboarding><ArticleHub /></RequireCompletedOnboarding></RequireAuth>} />
+        <Route path="/login" element={<ProjectLogin />} />
+        <Route path="/" element={<RequireProjectAccess><Home /></RequireProjectAccess>} />
+        <Route path="/onboarding" element={<RequireProjectAccess><OnboardingRoute /></RequireProjectAccess>} />
+        <Route path="/dashboard" element={<RequireProjectAccess><RequireAuth><Navbar /><GuestBanner /><RequireCompletedOnboarding><Dashboard /></RequireCompletedOnboarding></RequireAuth></RequireProjectAccess>} />
+        <Route path="/habits"    element={<RequireProjectAccess><RequireAuth><Navbar /><GuestBanner /><HabitTracker /></RequireAuth></RequireProjectAccess>} />
+        <Route path="/progress"  element={<RequireProjectAccess><RequireAuth><Navbar /><GuestBanner /><Progress /></RequireAuth></RequireProjectAccess>} />
+        <Route path="/games"     element={<RequireProjectAccess><Navbar /><GuestBanner /><MiniGames /></RequireProjectAccess>} />
+        <Route path="/articles"  element={<RequireProjectAccess><RequireAuth><Navbar /><GuestBanner /><RequireCompletedOnboarding><ArticleHub /></RequireCompletedOnboarding></RequireAuth></RequireProjectAccess>} />
       </Routes>
     </BrowserRouter>
   )

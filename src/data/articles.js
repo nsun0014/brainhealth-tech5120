@@ -1,4 +1,24 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Article data for BrainBoost's Article Hub.
+//
+// Each article object has the following fields:
+//   id          — unique string identifier used as React key
+//   topic       — domain key: 'sleep_rhythm' | 'move_mode' | 'cognitive_strain' | 'social_energy'
+//                 Must match the domain keys in scoring.js / recommendations.js so that
+//                 personalised recommendations can match articles to weak domains.
+//   image       — Unsplash URL for the article cover image
+//   title       — display title shown on the article card
+//   source      — publisher name shown as a badge (e.g. 'headspace', 'WHO')
+//   sourceBadge — CSS class suffix for the coloured source badge
+//   readTime    — short label (e.g. '13 min read', 'Youth guide')
+//   summary     — one-sentence description shown on the card and in the modal
+//   url         — link to the original article, opened in a new tab
+//
+// Two articles exist per domain (8 total) so each topic always has content
+// even when only one domain is flagged as a priority for the user.
+// ─────────────────────────────────────────────────────────────────────────────
 export const ARTICLES = [
+  // ── Sleep Rhythm ────────────────────────────────────────────────────────────
   {
     id: 'sleep-healthdirect-insomnia',
     topic: 'sleep_rhythm',
@@ -25,6 +45,8 @@ export const ARTICLES = [
       'An Australian government-backed guide to sleep problems, sleep hygiene, and when to seek medical help.',
     url: 'https://www.healthdirect.gov.au/insomnia',
   },
+
+  // ── Move Mode ───────────────────────────────────────────────────────────────
   {
     id: 'move-who-physical-activity-facts',
     topic: 'move_mode',
@@ -51,6 +73,8 @@ export const ARTICLES = [
       'WHO guidance on how physical activity improves health and what activity levels adults should aim for each week.',
     url: 'https://www.who.int/news-room/fact-sheets/detail/physical-activity',
   },
+
+  // ── Cognitive Strain ────────────────────────────────────────────────────────
   {
     id: 'strain-who-stress-qa',
     topic: 'cognitive_strain',
@@ -77,6 +101,8 @@ export const ARTICLES = [
       'Helps young people spot burnout, understand how it differs from stress, and start recovering before everything feels too heavy.',
     url: 'https://au.reachout.com/articles/burnout-and-chronic-stress',
   },
+
+  // ── Social Energy ────────────────────────────────────────────────────────────
   {
     id: 'social-cdc-about',
     topic: 'social_energy',
@@ -105,10 +131,18 @@ export const ARTICLES = [
   },
 ]
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TOPIC_META — display metadata for each domain topic.
+//
+// Used by ArticleHub.jsx to:
+//   - Render the filter button labels (label).
+//   - Render the short topic chip inside recommendation pills (shortLabel).
+//   - Apply the correct CSS class to colour-code article cards (topic key as class name).
+// ─────────────────────────────────────────────────────────────────────────────
 export const TOPIC_META = {
   sleep_rhythm: {
-    label: 'Sleep Rhythm',
-    shortLabel: 'Sleep',
+    label: 'Sleep Rhythm',    // full label used in the topic filter buttons
+    shortLabel: 'Sleep',      // abbreviated label used in article pill chips
   },
   move_mode: {
     label: 'Move Mode',

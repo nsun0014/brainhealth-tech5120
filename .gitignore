@@ -2,7 +2,7 @@
 .env
 .env.*
 
-# Claude Code local settings
+# Local tool settings
 .claude/
 
 # Logs

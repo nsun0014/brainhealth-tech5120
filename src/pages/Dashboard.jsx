@@ -5,8 +5,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import './Dashboard.css'
-import { ARTICLES } from '../data/articles'
-import { getRecommendedArticles } from '../utils/recommendations'
+import { INSIGHTS } from '../data/insights'
+import { getRecommendedInsights } from '../utils/recommendations'
 import SleepDurationChart from '../components/SleepDurationChart'
 import PhysicalActivityChart from '../components/PhysicalActivityChart'
 import { calculateSnapshotFromResponses, calculateSnapshotFromCheckin } from '../utils/scoring'
@@ -35,7 +35,7 @@ const DOMAIN_ICONS = {
 const DOMAIN_TIPS = {
   sleep_rhythm:    '💡 Try going to bed 30 minutes earlier tonight — even small shifts help.',
   move_mode:       '💡 Take a 10-minute walk after your next meal to boost your energy.',
-  screen_exposure: '💡 Put your phone face-down 1 hour before bed to improve sleep quality.',
+  cognitive_strain:'💡 Put your phone face-down 1 hour before bed to improve sleep quality.',
   social_energy:   '💡 Send one message to a friend today — connection starts small.',
 }
 
@@ -670,7 +670,7 @@ function Dashboard() {
   const strongest           = sortedDomains[0]                        // highest-scoring domain
   const priority            = sortedDomains[sortedDomains.length - 1] // lowest-scoring domain
   const secondaryPriority   = sortedDomains[sortedDomains.length - 2] // second-lowest domain
-  const recommendedArticles = getRecommendedArticles(snapshot, ARTICLES, 3)
+  const recommendedInsights = getRecommendedInsights(snapshot, INSIGHTS, 3)
 
   // Look up chart band objects from Q1/Q2 answer codes.
   // These are passed to the benchmark chart components to show where the user sits
@@ -871,7 +871,7 @@ function Dashboard() {
               {expandedCard === 'strongest' && (
                 <div className="standout-expanded">
                   <div className="standout-indicator"><span>Sleep</span><span>{snapshot.domainScores?.find(d=>d.key==='sleep_rhythm')?.score ?? '—'}/100</span></div>
-                  <div className="standout-indicator"><span>Screen</span><span>{snapshot.domainScores?.find(d=>d.key==='screen_exposure')?.score ?? '—'}/100</span></div>
+                  <div className="standout-indicator"><span>Screen</span><span>{snapshot.domainScores?.find(d=>d.key==='cognitive_strain')?.score ?? '—'}/100</span></div>
                   <div className="standout-indicator"><span>Activity</span><span>{snapshot.domainScores?.find(d=>d.key==='move_mode')?.score ?? '—'}/100</span></div>
                   <div className="standout-indicator"><span>Social</span><span>{snapshot.domainScores?.find(d=>d.key==='social_energy')?.score ?? '—'}/100</span></div>
                 </div>
@@ -890,7 +890,7 @@ function Dashboard() {
               {expandedCard === 'focus' && (
                 <div className="standout-expanded">
                   <div className="standout-indicator"><span>Sleep</span><span>{snapshot.domainScores?.find(d=>d.key==='sleep_rhythm')?.score ?? '—'}/100</span></div>
-                  <div className="standout-indicator"><span>Screen</span><span>{snapshot.domainScores?.find(d=>d.key==='screen_exposure')?.score ?? '—'}/100</span></div>
+                  <div className="standout-indicator"><span>Screen</span><span>{snapshot.domainScores?.find(d=>d.key==='cognitive_strain')?.score ?? '—'}/100</span></div>
                   <div className="standout-indicator"><span>Activity</span><span>{snapshot.domainScores?.find(d=>d.key==='move_mode')?.score ?? '—'}/100</span></div>
                   <div className="standout-indicator"><span>Social</span><span>{snapshot.domainScores?.find(d=>d.key==='social_energy')?.score ?? '—'}/100</span></div>
                 </div>
@@ -930,7 +930,7 @@ function Dashboard() {
               {expandedCard === 'overall' && (
                 <div className="standout-expanded">
                   <div className="standout-indicator"><span>Sleep</span><span>{snapshot.domainScores?.find(d=>d.key==='sleep_rhythm')?.score ?? '—'}/100</span></div>
-                  <div className="standout-indicator"><span>Screen</span><span>{snapshot.domainScores?.find(d=>d.key==='screen_exposure')?.score ?? '—'}/100</span></div>
+                  <div className="standout-indicator"><span>Screen</span><span>{snapshot.domainScores?.find(d=>d.key==='cognitive_strain')?.score ?? '—'}/100</span></div>
                   <div className="standout-indicator"><span>Activity</span><span>{snapshot.domainScores?.find(d=>d.key==='move_mode')?.score ?? '—'}/100</span></div>
                   <div className="standout-indicator"><span>Social</span><span>{snapshot.domainScores?.find(d=>d.key==='social_energy')?.score ?? '—'}/100</span></div>
                 </div>
@@ -941,19 +941,45 @@ function Dashboard() {
 
       </div>
 
-      {/* ── Reads ───────────────────────────────────────────────────────────── */}
-      {/* Up to 3 recommended articles, ordered by the user's weakest domains */}
-      <div className="section-heading">Reads for you</div>
-      <div className="reads-grid">
-        {recommendedArticles.map((article) => (
-          <Link key={article.id} className="read-card" to="/articles" {...tilt}>
-            <img className="read-img" src={article.image} alt={article.title} />
-            <div className="read-body">
-              {/* Topic tag: CSS class drives colour */}
-              <div className={`read-tag ${article.topic}`}>{article.topic.replace('_', ' ')}</div>
-              <div className="read-title">{article.title}</div>
+      {/* ── 30-second insights ──────────────────────────────────────────────── */}
+      <div className="section-heading insight-heading">Brain boosts to try now</div>
+      <div className="insights-subhead">Picked from your lowest scores.</div>
+      <div className="insights-grid">
+        {recommendedInsights.map((insight) => (
+          <article key={insight.id} className={`insight-card ${insight.topic}`} {...tilt}>
+            <div className="insight-visual">
+              <img src={insight.image} alt="" aria-hidden="true" />
+              <span className="insight-float insight-float-one" />
+              <span className="insight-float insight-float-two" />
+              <span className="insight-float insight-float-three" />
             </div>
-          </Link>
+            <div className="insight-topline">
+              <span className={`insight-chip ${insight.topic}`}>
+                <span className={`insight-icon insight-icon-${insight.icon}`} aria-hidden="true" />
+                {insight.label}
+              </span>
+              <span className="insight-time">Try now</span>
+            </div>
+            <div className="insight-eyebrow">{insight.eyebrow}</div>
+            <h3 className="insight-title">{insight.title}</h3>
+            <p className="insight-copy">{insight.insight}</p>
+            <div className="insight-plan" aria-label={`${insight.label} action steps`}>
+              {insight.steps.map((step, index) => (
+                <div className="insight-step" key={step}>
+                  <span>{index + 1}</span>
+                  <p>{step}</p>
+                </div>
+              ))}
+            </div>
+            <a
+              className="insight-source"
+              href={insight.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Backed by {insight.source}
+            </a>
+          </article>
         ))}
       </div>
 

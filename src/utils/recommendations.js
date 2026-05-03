@@ -97,3 +97,19 @@ export function getRecommendedArticles(snapshot, articles, limit = 4) {
 
   return ranked.slice(0, limit)
 }
+
+// Ranks short Dashboard insight cards by the user's weakest domains.
+export function getRecommendedInsights(snapshot, insights, limit = 3) {
+  const priorityDomains = getPriorityDomains(snapshot, 2)
+  if (!priorityDomains.length) return insights.slice(0, limit)
+
+  const ranked = [...insights].sort((left, right) => {
+    const leftRank  = priorityDomains.indexOf(left.topic)
+    const rightRank = priorityDomains.indexOf(right.topic)
+    const normalizedLeft  = leftRank  === -1 ? Number.MAX_SAFE_INTEGER : leftRank
+    const normalizedRight = rightRank === -1 ? Number.MAX_SAFE_INTEGER : rightRank
+    return normalizedLeft - normalizedRight
+  })
+
+  return ranked.slice(0, limit)
+}

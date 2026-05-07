@@ -362,9 +362,10 @@ function Progress() {
               <div key={h.id} className="recent-item">
                 {/* Dot colour: green if active that day, grey if rest day */}
                 <div className="recent-dot" style={{ background: h.physical_activity ? '#16a34a' : '#94a3b8' }} />
-                {/* T12:00:00 is appended to avoid off-by-one day errors from timezone offsets */}
+                {/* If date is already a full ISO timestamp (authenticated), use it directly.
+                    If it's a plain YYYY-MM-DD string (guest), append T12:00:00 to avoid timezone off-by-one. */}
                 <div className="recent-date">
-                  {new Date(h.date + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {new Date(h.date.includes('T') ? h.date : h.date + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </div>
                 <div className="recent-tags">
                   <span className="recent-tag">{h.sleep_hours} hrs sleep</span>

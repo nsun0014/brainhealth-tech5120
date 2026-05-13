@@ -65,78 +65,6 @@ const MILESTONES = [
 // Each achievement has an id, emoji, Gen Z label, desc, rarity tier, and a
 // condition function that receives the full gameScores array and returns boolean.
 // Rarity: 'common' | 'rare' | 'legendary'
-const GAME_ACHIEVEMENTS = [
-  {
-    id: 'reaction_first', emoji: '⚡', rarity: 'common',
-    label: 'first tap',
-    desc: 'Played your first Reaction Test',
-    hint: 'Play the Reaction Test once',
-    condition: s => s.some(g => g.game_id === 'reaction'),
-  },
-  {
-    id: 'understood', emoji: '🎯', rarity: 'rare',
-    label: 'understood the assignment',
-    desc: 'Got under 300ms on the Reaction Test',
-    hint: 'React in under 300ms',
-    condition: s => s.some(g => g.game_id === 'reaction' && g.score < 300),
-  },
-  {
-    id: 'built_different', emoji: '⚡', rarity: 'legendary',
-    label: 'built different',
-    desc: "Sub 250ms reaction time — ngl you're just wired differently",
-    hint: 'React in under 250ms',
-    condition: s => s.some(g => g.game_id === 'reaction' && g.score < 250),
-  },
-  {
-    id: 'memory_first', emoji: '🃏', rarity: 'common',
-    label: 'first flip',
-    desc: 'Played your first Memory Match',
-    hint: 'Play the Memory Match once',
-    condition: s => s.some(g => g.game_id === 'memory'),
-  },
-  {
-    id: 'big_brain', emoji: '🧠', rarity: 'rare',
-    label: 'big brain behavior',
-    desc: 'Finished Memory Match in 20 moves or less',
-    hint: 'Complete Memory Match in ≤20 moves',
-    condition: s => s.some(g => g.game_id === 'memory' && g.score <= 20),
-  },
-  {
-    id: 'no_crumbs', emoji: '✨', rarity: 'legendary',
-    label: 'ate and left no crumbs',
-    desc: 'Crushed Memory Match in 16 moves or less — fr no cap',
-    hint: 'Complete Memory Match in ≤16 moves',
-    condition: s => s.some(g => g.game_id === 'memory' && g.score <= 16),
-  },
-  {
-    id: 'stroop_first', emoji: '🌈', rarity: 'common',
-    label: 'colour coded',
-    desc: 'Played your first Stroop Test',
-    hint: 'Play the Stroop Test once',
-    condition: s => s.some(g => g.game_id === 'stroop'),
-  },
-  {
-    id: 'no_cap', emoji: '💯', rarity: 'rare',
-    label: 'no cap',
-    desc: '80%+ accuracy on Stroop — your focus is locked in fr',
-    hint: 'Score 80%+ accuracy on Stroop',
-    condition: s => s.some(g => g.game_id === 'stroop' && g.score >= 80),
-  },
-  {
-    id: 'holy_trinity', emoji: '🙏', rarity: 'rare',
-    label: 'the holy trinity',
-    desc: 'Played all 3 games — respect',
-    hint: 'Play all 3 games at least once',
-    condition: s => ['reaction', 'memory', 'stroop'].every(id => s.some(g => g.game_id === id)),
-  },
-  {
-    id: 'main_character', emoji: '🔥', rarity: 'legendary',
-    label: 'main character energy',
-    desc: 'Played 5+ games total — the dedication is real',
-    hint: 'Play any game 5 times total',
-    condition: s => s.length >= 5,
-  },
-]
 
 // ── Rating helpers ──────────────────────────────────────────────────────────
 // Returns a label and colour for a reaction-time score (in milliseconds).
@@ -231,17 +159,19 @@ function Progress() {
   const unlockedMilestones    = MILESTONES.filter(m => total >= m.days)
   const nextMilestone         = MILESTONES.find(m => total < m.days)
   const progressToNext        = nextMilestone ? (total / nextMilestone.days) * 100 : 100  // 100% if all milestones are unlocked
-  const unlockedAchievements  = GAME_ACHIEVEMENTS.filter(a => a.condition(gameScores))
 
-  // Per-game chart data: take the last 8 plays, reverse to chronological order for the x-axis.
-  const reactionData = gameScores.filter(g => g.game_id === 'reaction').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, ms: g.score }))
-  const memoryData   = gameScores.filter(g => g.game_id === 'memory').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, moves: g.score }))
-  const stroopData   = gameScores.filter(g => g.game_id === 'stroop').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, acc: g.score }))
+  const reactionData    = gameScores.filter(g => g.game_id === 'reaction').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, ms: g.score }))
+  const memoryData      = gameScores.filter(g => g.game_id === 'memory').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, moves: g.score }))
+  const stroopData      = gameScores.filter(g => g.game_id === 'stroop').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, acc: g.score }))
+  const patternData     = gameScores.filter(g => g.game_id === 'visual_pattern').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, level: g.score }))
+  const mathData        = gameScores.filter(g => g.game_id === 'mental_math').slice(0, 8).reverse().map((g, i) => ({ n: `#${i + 1}`, score: g.score }))
 
-  // Personal bests per game (reaction/memory: lower = better; stroop: higher = better).
-  const pbReaction = reactionData.length > 0 ? Math.min(...reactionData.map(d => d.ms))    : null
-  const pbMemory   = memoryData.length   > 0 ? Math.min(...memoryData.map(d => d.moves))   : null
-  const pbStroop   = stroopData.length   > 0 ? Math.max(...stroopData.map(d => d.acc))     : null
+  // Personal bests per game (reaction/memory: lower = better; stroop/pattern/math: higher = better).
+  const pbReaction = reactionData.length > 0 ? Math.min(...reactionData.map(d => d.ms))      : null
+  const pbMemory   = memoryData.length   > 0 ? Math.min(...memoryData.map(d => d.moves))     : null
+  const pbStroop   = stroopData.length   > 0 ? Math.max(...stroopData.map(d => d.acc))       : null
+  const pbPattern  = patternData.length  > 0 ? Math.max(...patternData.map(d => d.level))    : null
+  const pbMath     = mathData.length     > 0 ? Math.max(...mathData.map(d => d.score))       : null
 
   // Show a spinner while data is loading.
   if (loading) return (
@@ -272,18 +202,12 @@ function Progress() {
           <h1>Your Progress</h1>
           <p>Every check-in brings you closer to a healthier brain.</p>
         </div>
-        {/* Decorative SVG with an animated pulsing circle and streak counter */}
         <div className="progress-hero-visual">
-          <svg viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg" width="180" height="140">
-            <circle cx="90" cy="70" r="55" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1.5"/>
-            <path d="M65,50 L90,30 L115,50 L125,80 L105,105 L75,105 L55,80 Z" fill="#dbeafe" stroke="#3b82f6" strokeWidth="1.5"/>
-            <path d="M75,65 L85,75 L105,55" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <circle cx="90" cy="30" r="4" fill="#2563eb">
-              <animate attributeName="r" values="4;5;4" dur="2s" repeatCount="indefinite"/>
-            </circle>
-            {/* Streak count rendered as SVG text so it updates reactively */}
-            <text x="90" y="125" textAnchor="middle" fontSize="11" fill="#2563eb" fontWeight="700">{streak} day streak</text>
-          </svg>
+          <img
+            src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=300&q=80"
+            alt="Progress"
+            className="hero-illustration"
+          />
         </div>
       </div>
 
@@ -395,31 +319,6 @@ function Progress() {
         </div>
       </div>
 
-      {/* ── Game achievements ────────────────────────────────────────────────── */}
-      <div className="achievements-section">
-        <div className="achievements-header">
-          <h2>game achievements</h2>
-          <span className="achievements-count">{unlockedAchievements.length}/{GAME_ACHIEVEMENTS.length} unlocked</span>
-        </div>
-        <div className="achievements-grid">
-          {GAME_ACHIEVEMENTS.map(a => {
-            const unlocked = a.condition(gameScores)
-            return (
-              <div key={a.id} className={`achievement-card rarity-${a.rarity} ${unlocked ? 'unlocked' : 'locked'}`}>
-                <div className="achievement-emoji">{unlocked ? a.emoji : '🔒'}</div>
-                <div className="achievement-body">
-                  <div className="achievement-label">{a.label}</div>
-                  <div className="achievement-desc">{unlocked ? a.desc : a.hint}</div>
-                </div>
-                <div className={`achievement-rarity-badge rarity-${a.rarity}`}>
-                  {a.rarity}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
       {/* ── Game performance charts ──────────────────────────────────────────── */}
       <div className="game-charts-section">
         <h2>Game Performance</h2>
@@ -516,6 +415,74 @@ function Progress() {
                   <Bar dataKey="acc" radius={[6, 6, 0, 0]}>
                     {stroopData.map((entry, i) => (
                       <Cell key={i} fill={entry.acc >= 80 ? '#16a34a' : entry.acc >= 60 ? '#f59e0b' : '#ef4444'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* ── Visual Pattern ── */}
+          <div className="game-chart-card" style={{ borderTopColor: '#0891b2' }}>
+            <div className="game-chart-header">
+              <div>
+                <div className="game-chart-title">🔲 Visual Pattern</div>
+                <div className="game-chart-skill">Working Memory · higher level = better</div>
+              </div>
+              {pbPattern !== null && (
+                <div className="game-chart-pb" style={{ background: '#e0f9ff', borderColor: '#0891b240' }}>
+                  <div className="game-chart-pb-num" style={{ color: '#0891b2' }}>Lvl {pbPattern}</div>
+                  <div className="game-chart-pb-label">personal best</div>
+                </div>
+              )}
+            </div>
+            {patternData.length === 0 ? (
+              <div className="game-chart-empty">No plays yet — give it a try!</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={150}>
+                <BarChart data={patternData} margin={{ top: 8, right: 24, bottom: 0, left: -20 }} barSize={22}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="n" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={v => [`Level ${v}`, 'Level reached']} contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                  <ReferenceLine y={6} stroke="#cbd5e1" strokeDasharray="4 3" label={{ value: 'target', position: 'insideTopRight', fontSize: 10, fill: '#94a3b8' }} />
+                  <Bar dataKey="level" radius={[6, 6, 0, 0]}>
+                    {patternData.map((entry, i) => (
+                      <Cell key={i} fill={entry.level >= 9 ? '#16a34a' : entry.level >= 6 ? '#0891b2' : '#f59e0b'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* ── Mental Math ── */}
+          <div className="game-chart-card" style={{ borderTopColor: '#16a34a' }}>
+            <div className="game-chart-header">
+              <div>
+                <div className="game-chart-title">🔢 Mental Math</div>
+                <div className="game-chart-skill">Executive Function · higher score = better</div>
+              </div>
+              {pbMath !== null && (
+                <div className="game-chart-pb" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+                  <div className="game-chart-pb-num" style={{ color: '#16a34a' }}>{pbMath}</div>
+                  <div className="game-chart-pb-label">personal best</div>
+                </div>
+              )}
+            </div>
+            {mathData.length === 0 ? (
+              <div className="game-chart-empty">No plays yet — give it a try!</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={150}>
+                <BarChart data={mathData} margin={{ top: 8, right: 24, bottom: 0, left: -20 }} barSize={22}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="n" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={v => [`${v} correct`, 'Score']} contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                  <ReferenceLine y={18} stroke="#cbd5e1" strokeDasharray="4 3" label={{ value: 'target', position: 'insideTopRight', fontSize: 10, fill: '#94a3b8' }} />
+                  <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                    {mathData.map((entry, i) => (
+                      <Cell key={i} fill={entry.score >= 25 ? '#16a34a' : entry.score >= 18 ? '#2563eb' : '#f59e0b'} />
                     ))}
                   </Bar>
                 </BarChart>

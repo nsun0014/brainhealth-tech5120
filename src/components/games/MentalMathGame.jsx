@@ -5,9 +5,9 @@
 // Tests processing speed and executive function.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth, useUser } from '@clerk/clerk-react'
 import './Game.css'
-import { getOrCreateDisplayName } from '../../utils/displayName'
+import { getDisplayName } from '../../utils/displayName'
 
 const API = import.meta.env.VITE_API_URL || 'https://brainhealth-iteration2-production.up.railway.app/api'
 
@@ -83,6 +83,7 @@ function generateQuestion(streak) {
 
 function MentalMathGame({ onBack }) {
   const { getToken } = useAuth()
+  const { user } = useUser()
   const [phase, setPhase] = useState('intro')
   const [question, setQuestion] = useState(null)
   const [score, setScore] = useState(0)
@@ -133,12 +134,16 @@ function MentalMathGame({ onBack }) {
   async function saveScore() {
     try {
       const token = await getToken()
-      if (!token) return
+      const guestId = !token ? localStorage.getItem('bb_guest_id') : null
+      if (!token && !guestId) return
+      const headers = token
+        ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        : { 'X-Guest-ID': guestId, 'Content-Type': 'application/json' }
       const accuracy = total > 0 ? Math.round((score / total) * 100) : 0
       await fetch(`${API}/games`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: 'mental_math', display_name: getOrCreateDisplayName(), score, metadata: { total, accuracy, best_streak: bestStreak } })
+        headers,
+        body: JSON.stringify({ game_id: 'mental_math', display_name: getDisplayName(user?.id, user?.firstName), score, metadata: { total, accuracy, best_streak: bestStreak } })
       })
       setSaved(true)
     } catch (err) { console.error(err) }

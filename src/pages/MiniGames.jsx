@@ -5,7 +5,7 @@ import MemoryGame from '../components/games/MemoryGame'
 import StroopGame from '../components/games/StroopGame'
 import VisualPatternGame from '../components/games/VisualPatternGame'
 import MentalMathGame from '../components/games/MentalMathGame'
-import { getOrCreateDisplayName } from '../utils/displayName'
+import { getDisplayName } from '../utils/displayName'
 import { GAME_ACHIEVEMENTS } from '../data/gameAchievements'
 import './MiniGames.css'
 
@@ -61,11 +61,11 @@ const GAMES = [
 ]
 
 // ── Leaderboard panel ────────────────────────────────────────────────────────
-function Leaderboard({ currentUserId }) {
+function Leaderboard({ currentUserId, currentUserFirstName }) {
   const [activeGame, setActiveGame] = useState('reaction')
   const [boards, setBoards] = useState({})
   const [loading, setLoading] = useState(false)
-  const myName = getOrCreateDisplayName()
+  const myName = getDisplayName(currentUserId, currentUserFirstName)
 
   useEffect(() => {
     if (boards[activeGame]) return
@@ -154,16 +154,11 @@ function MiniGames() {
   const { user } = useUser()
   const { getToken } = useAuth()
 
+  // Ensure display name is initialised on mount for both guests and signed-in users.
+  // getDisplayName uses per-identity localStorage keys so the name never changes.
   useEffect(() => {
-    if (user?.firstName) {
-      const existing = localStorage.getItem('bb_display_name')
-      if (!existing || !existing.includes(user.firstName)) {
-        localStorage.setItem('bb_display_name', `${user.firstName} #${Math.floor(Math.random() * 9000) + 1000}`)
-      }
-    } else {
-      getOrCreateDisplayName()
-    }
-  }, [user])
+    getDisplayName(user?.id, user?.firstName)
+  }, [user?.id])
 
   // Fetch game scores so achievements can evaluate conditions
   useEffect(() => {
@@ -250,7 +245,7 @@ function MiniGames() {
         </div>
       )}
 
-      {activeTab === 'leaderboard' && <Leaderboard currentUserId={user?.id} />}
+      {activeTab === 'leaderboard' && <Leaderboard currentUserId={user?.id} currentUserFirstName={user?.firstName} />}
       {activeTab === 'achievements' && <Achievements gameScores={gameScores} />}
     </div>
   )

@@ -24,9 +24,9 @@
 //   onBack — callback to return to the MiniGames hub
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useRef } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth, useUser } from '@clerk/clerk-react'
 import './Game.css'
-import { getOrCreateDisplayName } from '../../utils/displayName'
+import { getDisplayName } from '../../utils/displayName'
 
 const API = import.meta.env.VITE_API_URL || 'https://brainhealth-iteration2-production.up.railway.app/api'
 
@@ -93,6 +93,7 @@ const OtherGames = ({ onBack }) => (
 
 function ReactionGame({ onBack }) {
   const { getToken } = useAuth()
+  const { user } = useUser()
 
   const [state,        setState]        = useState(STATES.WAITING)  // current phase of the state machine
   const [phase,        setPhase]        = useState('intro')
@@ -123,15 +124,19 @@ function ReactionGame({ onBack }) {
   async function saveScore(avgMs, allResults) {
     try {
       const token = await getToken()
-      if (!token) return  // guest users — no Clerk token, skip saving
+      const guestId = !token ? localStorage.getItem('bb_guest_id') : null
+      if (!token && !guestId) return
+      const headers = token
+        ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        : { 'X-Guest-ID': guestId, 'Content-Type': 'application/json' }
       await fetch(`${API}/games`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           game_id: 'reaction',
-          display_name: getOrCreateDisplayName(),
-          score: avgMs,           // primary metric stored in the score column
-          metadata: { rounds: allResults }  // per-round breakdown stored in metadata
+          display_name: getDisplayName(user?.id, user?.firstName),
+          score: avgMs,
+          metadata: { rounds: allResults }
         })
       })
       setSaved(true)

@@ -66,7 +66,8 @@ function HandleAuthTransition() {
   const { getToken } = useAuth()
 
   useEffect(() => {
-    if (!isSignedIn || !user) return
+    if (!isSignedIn) return
+    if (!user) return
 
     const userId = user.id
     const alreadyMigrated = localStorage.getItem(LS_MIGRATED) === userId
@@ -113,7 +114,6 @@ function HandleAuthTransition() {
       localStorage.removeItem('bb_is_guest')
       localStorage.removeItem('bb_total_checkins')
       localStorage.removeItem('bb_guest_id')
-      // Guest habits stay untouched (empty anyway)
     }
   }, [isSignedIn, user?.id])
 

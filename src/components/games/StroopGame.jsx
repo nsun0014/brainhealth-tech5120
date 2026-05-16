@@ -15,9 +15,9 @@
 //   onSwitchGame — unused but kept for forward-compatibility with future hub designs
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth, useUser } from '@clerk/clerk-react'
 import './Game.css'
-import { getOrCreateDisplayName } from '../../utils/displayName'
+import { getDisplayName } from '../../utils/displayName'
 
 const API = import.meta.env.VITE_API_URL || 'https://brainhealth-iteration2-production.up.railway.app/api'
 
@@ -112,6 +112,7 @@ const OtherGames = ({ onBack }) => (
 
 function StroopGame({ onBack, onSwitchGame }) {
   const { getToken } = useAuth()
+  const { user } = useUser()
 
   // phase: 'intro' → show instructions; 'playing' → active game; 'done' → results
   const [phase,      setPhase]      = useState('intro')
@@ -147,13 +148,17 @@ function StroopGame({ onBack, onSwitchGame }) {
   async function saveScore() {
     try {
       const token = await getToken()
-      if (!token) return  // guest users — no Clerk token, skip saving
+      const guestId = !token ? localStorage.getItem('bb_guest_id') : null
+      if (!token && !guestId) return
+      const headers = token
+        ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        : { 'X-Guest-ID': guestId, 'Content-Type': 'application/json' }
       await fetch(`${API}/games`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           game_id: 'stroop',
-          display_name: getOrCreateDisplayName(),
+          display_name: getDisplayName(user?.id, user?.firstName),
           score,  // correct answers count (raw); accuracy % is in metadata
           metadata: {
             total_rounds: total,

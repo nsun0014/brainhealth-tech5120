@@ -34,8 +34,8 @@ function Navbar() {
     <nav className="navbar">
       {/* Left side: brand logo and home icon button */}
       <div className="navbar-left">
-        {/* BrainBoost brand name — clicking takes the user back to the marketing home page */}
-        <Link to="/" className="navbar-logo">Brain<span>Boost</span></Link>
+        {/* CogniCompass brand name — clicking takes the user back to the marketing home page */}
+        <Link to="/" className="navbar-logo">Cogni<span>Compass</span></Link>
         {/* Home icon button — an alternative shortcut to the home page */}
         <Link to="/" className="navbar-home-btn" title="Back to Home">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,8 +63,6 @@ function Navbar() {
         <Link to={canAccessProtectedPages ? '/progress' : '/onboarding'} className={`nav-tab ${location.pathname === '/progress' ? 'active' : ''}`}>Progress</Link>
         {/* Article Hub: personalised reads based on the snapshot's weakest domains */}
         <Link to={canAccessProtectedPages ? '/articles' : '/onboarding'} className={`nav-tab ${location.pathname === '/articles' ? 'active' : ''}`}>Article Hub</Link>
-        {/* Smart Reminders: contextual nudges based on sleep, screen time, and study patterns */}
-        <Link to={canAccessProtectedPages ? '/reminders' : '/onboarding'} className={`nav-tab ${location.pathname === '/reminders' ? 'active' : ''}`}>🔔 Reminders</Link>
       </div>
 
       {/* Right side: Clerk UserButton — shows the user's avatar and a sign-out option.
